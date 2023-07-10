@@ -12,6 +12,8 @@ import datetime
 from operator import itemgetter
 import pickle
 import time
+import random
+import traceback
 
 pd.set_option('display.max_colwidth', 250)
 pd.set_option('display.max_rows', 250)
@@ -34,8 +36,8 @@ class EventMsgType(Enum):
 
 def load_game_rotation(game_id):
     # set parquet path
-    path_home = os.path.join(os.getcwd(), 'data', 'game_rotations', game_id + '_home.parquet')
-    path_away = os.path.join(os.getcwd(), 'data', 'game_rotations', game_id + '_away.parquet')
+    path_home = os.path.join(os.getcwd(), 'data', 'raw', 'game_rotations', game_id + '_home.parquet')
+    path_away = os.path.join(os.getcwd(), 'data', 'raw', 'game_rotations', game_id + '_away.parquet')
     # check if parquet file exists
     if os.path.exists(path_home) and os.path.exists(path_away):
         return pd.read_parquet(path_home), pd.read_parquet(path_away)
@@ -141,7 +143,7 @@ def parse_game_rotations(dfs, score_margins, period_margins, box_score):
 
 
 def get_game_pbp(game_id):
-    path = 'data/pbp/' + str(game_id) + '.parquet'
+    path = 'data/raw/pbp/' + str(game_id) + '.parquet'
     if os.path.exists(path):
         return pd.read_parquet(path)
     else:
@@ -153,7 +155,7 @@ def get_game_pbp(game_id):
 
 
 def get_game_box_score(game_id):
-    path = 'data/box_score/' + str(game_id) + '.parquet'
+    path = 'data/raw/box_score/' + str(game_id) + '.parquet'
     if os.path.exists(path):
         return pd.read_parquet(path)
     box_score = boxscoresummaryv2.BoxScoreSummaryV2(game_id).get_data_frames()[0]
@@ -165,7 +167,7 @@ def get_game_box_score(game_id):
 
 def get_season_games(season=Season.default):
     # Check to see if df is already saved (parquet)
-    path = 'data/season_' + season + '_games.parquet'
+    path = 'data/raw/season_' + season + '_games.parquet'
     if os.path.exists(path):
         return pd.read_parquet(path)
     gamefinder_regular_season = leaguegamefinder.LeagueGameFinder(league_id_nullable='00',
@@ -206,13 +208,13 @@ def get_last_game(team):
 
 def get_teams():
     # Check to see if df is already saved
-    if os.path.exists('data/nba_teams.parquet'):
-        return pd.read_parquet('data/nba_teams.parquet')
+    if os.path.exists('data/raw/nba_teams.parquet'):
+        return pd.read_parquet('data/raw/nba_teams.parquet')
     nba_teams = teams.get_teams()
     # Save to load later (using parquet), checking if the directory exists
     if not os.path.exists('data'):
         os.makedirs('data')
-    pd.DataFrame(nba_teams).to_parquet('data/nba_teams.parquet')
+    pd.DataFrame(nba_teams).to_parquet('data/raw/nba_teams.parquet')
     return teams
 
 
@@ -428,25 +430,35 @@ def get_lineup_point_differential(lineups, pbp):
 def process_game(game_id):
 
     # Load parsed file it if exists
-    path = f'data/lineup_diffs/{game_id}.pkl'
+    path = f'data/raw/lineup_diffs/{game_id}.pkl'
     if os.path.exists(path):
         with open(path, 'rb') as f:
-            return pickle.load(f)
-
-    pbp = get_game_pbp(game_id)
+            return pickle.load(f), False
+    try:
+        pbp = get_game_pbp(game_id)
+    except Exception as e:
+        print(f'Error getting pbp {game_id}: {e}')
+        print(traceback.format_exc())
+        return {}, False
     pbp = add_score_margins(pbp)
     pbp = add_elapsed_time(pbp)
     pbp = remove_duplicate_time_rows(pbp)
     game_rotations = load_game_rotation(game_id)
-    player_lineups = parse_lineups(game_rotations)
-    lineup_diffs = get_lineup_point_differential(player_lineups, pbp)
+
+    try:
+        player_lineups = parse_lineups(game_rotations)
+        lineup_diffs = get_lineup_point_differential(player_lineups, pbp)
+    except Exception as e:
+        print(f'Error processing game {game_id}: {e}')
+        print(traceback.format_exc())
+        return {}, False
 
     # Save pickled lineup diffs to file, ensuring directory exists
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, 'wb') as f:
         pickle.dump(lineup_diffs, f)
 
-    return lineup_diffs
+    return lineup_diffs, True
 
 def process_last_bulls_game():
     team = get_team('CHI')
@@ -464,8 +476,11 @@ def process_season(season):
     for i, row in games_df.iterrows():
         game_id = row['GAME_ID']
         print(f'{season} - {game_id} - {i}/{len(games_df)}')
-        lineup_diffs = process_game(game_id)
-        # time.sleep(5)
+        lineup_diffs, do_sleep = process_game(game_id)
+        if do_sleep:
+            time_sleep = random.uniform(0.9, 1.5)
+            # print(f'Sleeping for {time_sleep} seconds...')
+            time.sleep(time_sleep)
 
 
 def process_n_seasons(n=1):
@@ -486,13 +501,16 @@ def main():
             print('Finished')
             break  # exit the loop if successful
         except Exception as e:
+            msg = str(e)
             print(f"Error occurred: {str(e)}")
-            if retry < max_retries - 1:
-                print(f"Retrying in {retry_delay} seconds...")
-                time.sleep(retry_delay)
-                retry_delay += retry_delay  # exponential backoff
-            else:
-                print("Max retries exceeded. Exiting.")
+            print(traceback.format_exc())
+            if msg != 'cannot unpack non-iterable NoneType object':
+                if retry < max_retries - 1:
+                    print(f"Retrying in {retry_delay} seconds...")
+                    time.sleep(retry_delay)
+                    retry_delay += retry_delay  # exponential backoff
+                else:
+                    print("Max retries exceeded. Exiting.")
 
 
 # Press the green button in the gutter to run the script.
