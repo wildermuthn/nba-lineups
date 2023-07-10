@@ -366,36 +366,61 @@ def add_elapsed_time(df):
     return df
 
 
+class NoMatchingSecondsElapsedError(Exception):
+    pass
+
+
+def calc_lineup_next_diff(current_lineup, next_lineup, pbp, second_mod=0):
+    home, away, current_seconds_elapsed = itemgetter('home', 'away', 'seconds_elapsed')(current_lineup)
+    _home, _away, next_seconds_elapsed = itemgetter('home', 'away', 'seconds_elapsed')(next_lineup)
+
+    offsets = [0, -1, 1]
+
+    for offset in offsets:
+        try:
+            current_pbp = pbp[pbp['SECONDS_ELAPSED'] == current_seconds_elapsed + offset]
+            current_score_margin = int(current_pbp['SCOREMARGIN'].iloc[0])
+            break
+        except IndexError:
+            continue
+    else:
+        print('raising exception')
+        raise NoMatchingSecondsElapsedError(f"No matching seconds_elapsed found for {next_seconds_elapsed} ± 1")
+
+    for offset in offsets:
+        try:
+            next_pbp = pbp[pbp['SECONDS_ELAPSED'] == next_seconds_elapsed + offset]
+            next_score_margin = int(next_pbp['SCOREMARGIN'].iloc[0])
+            break
+        except IndexError:
+            continue
+    else:
+        print('raising exception')
+        raise NoMatchingSecondsElapsedError(f"No matching seconds_elapsed found for {next_seconds_elapsed} ± 1")
+
+    # get difference between score margins
+    score_margin_diff = next_score_margin - current_score_margin
+    diff_seconds = next_seconds_elapsed - current_seconds_elapsed
+    return {'home': home,
+            'away': away,
+            'plus_minus': score_margin_diff,
+            'subbed_at': current_seconds_elapsed,
+            'time_played': diff_seconds}
+
 def get_lineup_point_differential(lineups, pbp):
     lineup_diffs = []
 
     for i, current_lineup in enumerate(lineups):
         # if next item in lineup exists
+        if i + 1 < len(lineups):
+            next_lineup = lineups[i + 1]
+        else:
+            break
         try:
-            if i + 1 < len(lineups):
-                next_lineup = lineups[i + 1]
-            else:
-                break
-            home, away, current_seconds_elapsed = itemgetter('home', 'away', 'seconds_elapsed')(current_lineup)
-            _home, _away, next_seconds_elapsed = itemgetter('home', 'away', 'seconds_elapsed')(next_lineup)
-            # find pbp rows for seconds_elapsed and next_seconds_elapsed
-            current_pbp = pbp[pbp['SECONDS_ELAPSED'] == current_seconds_elapsed]
-            next_pbp = pbp[pbp['SECONDS_ELAPSED'] == next_seconds_elapsed]
-            # get SCOREMARGIN for each pbp row
-            current_score_margin = int(current_pbp['SCOREMARGIN'].iloc[0])
-            next_score_margin = int(next_pbp['SCOREMARGIN'].iloc[0])
-            # get difference between score margins
-            score_margin_diff = next_score_margin - current_score_margin
-            diff_seconds = next_seconds_elapsed - current_seconds_elapsed
-            lineup_diffs.append({'home': home,
-                                 'away': away,
-                                 'plus_minus': score_margin_diff,
-                                 'subbed_at': current_seconds_elapsed,
-                                 'time_played': diff_seconds})
-        except IndexError:
-            print('-------------------')
-            print(current_lineup)
-            print(next_lineup)
+            diff = calc_lineup_next_diff(current_lineup, next_lineup, pbp)
+            lineup_diffs.append(diff)
+        except NoMatchingSecondsElapsedError:
+            print('FAILED')
             continue
     return lineup_diffs
 
@@ -431,20 +456,49 @@ def process_last_bulls_game():
     lineup_diffs = process_game(game_id)
     print('Go Bulls!')
 
-def process_last_season():
-    games_df = get_season_games()
+
+def process_season(season):
+    print(f'{season}...')
+    games_df = get_season_games(season)
     # iterate over df rows
     for i, row in games_df.iterrows():
         game_id = row['GAME_ID']
-        print(f'Processing game {game_id}...')
+        print(f'{season} - {game_id} - {i}/{len(games_df)}')
         lineup_diffs = process_game(game_id)
-        time.sleep(5)
+        # time.sleep(5)
+
+
+def process_n_seasons(n=1):
+    start_year = 23
+    for i in range(n):
+        season = f'20{start_year - (i + 1)}-{start_year - i}'
+        print(f'Processing season {season}...')
+        process_season(season)
 
 def main():
-    process_last_season()
-    print('finished')
+    n_seasons = 10
+    max_retries = 10
+    retry_delay = 5  # seconds
+
+    for retry in range(max_retries):
+        try:
+            process_n_seasons(n_seasons)
+            print('Finished')
+            break  # exit the loop if successful
+        except Exception as e:
+            print(f"Error occurred: {str(e)}")
+            if retry < max_retries - 1:
+                print(f"Retrying in {retry_delay} seconds...")
+                time.sleep(retry_delay)
+                retry_delay += retry_delay  # exponential backoff
+            else:
+                print("Max retries exceeded. Exiting.")
 
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     main()
+
+# Year Old (development)
+# Year in the NBA (rookies)
+# Ignore injuries? Number of years missed?
