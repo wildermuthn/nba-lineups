@@ -1,0 +1,10 @@
+name: nba-lineups
+channels:
+  - pytorch
+  - nvidia
+  - defaults
+dependencies:
+  - pytorch
+  - torchvision
+  - torchaudio
+  - cudatoolkit=11.7
