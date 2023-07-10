@@ -1,5 +1,5 @@
 # Path to the data
-DATA_PATH = 'data/lineup_diffs'
+DATA_PATH = 'data/raw/lineup_diffs'
 
 # Batch size for the DataLoader
 BATCH_SIZE = 32
