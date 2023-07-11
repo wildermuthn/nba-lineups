@@ -1,6 +1,6 @@
 # from nba_api.stats.endpoints import playercareerstats
 from nba_api.stats.static import teams
-from nba_api.stats.endpoints import leaguegamefinder, gamerotation, boxscoresummaryv2, boxscoretraditionalv2
+from nba_api.stats.endpoints import leaguegamefinder, gamerotation, boxscoresummaryv2, boxscoretraditionalv2, commonplayerinfo
 from nba_api.stats.library.parameters import Season
 from nba_api.stats.library.parameters import SeasonType, SeasonTypePlayoffs
 from nba_api.stats.endpoints import playbyplay
@@ -14,6 +14,7 @@ import pickle
 import time
 import random
 import traceback
+from tqdm import tqdm
 
 pd.set_option('display.max_colwidth', 250)
 pd.set_option('display.max_rows', 250)
@@ -49,98 +50,6 @@ def load_game_rotation(game_id):
     rotations[1].to_parquet(path_home)
     return rotations
 
-def parse_game_rotations(dfs, score_margins, period_margins, box_score):
-    home_team_id = box_score['HOME_TEAM_ID'][0]
-    # TODO use home and away team, since the margins are for the home team
-    a_df, b_df = dfs
-    a_tmp_id = a_df.iloc[0]['TEAM_ID']
-    if a_tmp_id != home_team_id:
-        tmp_df = a_df
-        a_df = b_df
-        b_df = tmp_df
-
-    a_id = a_df.iloc[0]['TEAM_ID']
-    b_id = b_df.iloc[0]['TEAM_ID']
-    a_starters = a_df[a_df['IN_TIME_REAL'] == 0.0]['PLAYER_LAST'].to_list()
-    b_starters = b_df[b_df['IN_TIME_REAL'] == 0.0]['PLAYER_LAST'].to_list()
-
-    subs = pd.concat([a_df, b_df])
-    subs = subs.sort_values(by=['OUT_TIME_REAL', 'IN_TIME_REAL'], ascending=[True, False])
-
-    # Iterate through subs, calculating the people on the floor, the plus-minus, and the elapsed time
-    player_ids = [[a_starters, b_starters]]
-    plus_minus = []
-    elapsed_time = []
-    i = 0
-
-    subs_made_at = []
-    subs_made_at.append(not subs[subs['IN_TIME_REAL'] == 7200].empty)  # 1st quarter
-    subs_made_at.append(not subs[subs['IN_TIME_REAL'] == 14400].empty)  # 2nd quarter
-    subs_made_at.append(not subs[subs['IN_TIME_REAL'] == 21600].empty)  # 3rd quarter
-    subs_made_at.append(not subs[subs['IN_TIME_REAL'] == 28800].empty)  # 4th quarter
-    subs_made_at.append(not subs[subs['IN_TIME_REAL'] == 36000].empty)  # OT
-    subs_made_at.append(not subs[subs['IN_TIME_REAL'] == 43200].empty)  # OT2
-    subs_made_at.append(not subs[subs['IN_TIME_REAL'] == 50400].empty)  # OT3
-    subs_made_at.append(not subs[subs['IN_TIME_REAL'] == 57600].empty)  # OT4
-    period_end = int(box_score['LIVE_PERIOD'])
-    subs_made_at[period_end - 1] = True
-
-    prev_out_time = 0
-    sub_times = []
-    subs_dedup = subs.drop_duplicates(subset='OUT_TIME_REAL', keep="first")
-    for _, row in subs.iterrows():
-        out_time = row['OUT_TIME_REAL']
-        if prev_out_time == out_time:
-            continue
-        sub_times.append(out_time)
-        if i == 0:
-            elapsed_time.append(out_time)
-        else:
-            elapsed_time.append(out_time - prev_out_time)
-        prev_out_time = out_time
-
-        a_subbed_out = subs[(subs['OUT_TIME_REAL'] == out_time) & (subs['TEAM_ID'] == a_id)]['PLAYER_LAST'].to_list()
-        a_subbed_in = subs[(subs['IN_TIME_REAL'] == out_time) & (subs['TEAM_ID'] == a_id)]['PLAYER_LAST'].to_list()
-        b_subbed_in = subs[(subs['IN_TIME_REAL'] == out_time) & (subs['TEAM_ID'] == b_id)]['PLAYER_LAST'].to_list()
-        b_subbed_out = subs[(subs['OUT_TIME_REAL'] == out_time) & (subs['TEAM_ID'] == b_id)]['PLAYER_LAST'].to_list()
-
-        a_player_ids, b_player_ids = player_ids[i].copy()
-        new_a_player_ids = [x for x in a_player_ids if x not in a_subbed_out]
-        new_a_player_ids.extend(a_subbed_in)
-        new_b_player_ids = [x for x in b_player_ids if x not in b_subbed_out]
-        new_b_player_ids.extend(b_subbed_in)
-        # append if both lists are not empty
-        if new_a_player_ids and new_b_player_ids:
-            player_ids.append([new_a_player_ids, new_b_player_ids])
-        i += 1
-
-    prev_score_margin = 0
-    for i, _ in enumerate(sub_times):
-        time = sub_times[i]
-        if time % 7200 == 0 and time <= 28800:
-            period_index = int(time / 7200) - 1
-            if subs_made_at[period_index]:
-                score_margin = period_margins[period_index]
-                plus_minus.append(score_margin - prev_score_margin)
-                prev_score_margin = score_margin
-                continue
-        elif time > 28800 and (time - 28800) % 3000 == 0:
-            period_index = int(3 + ((time - 28800) / 3000))
-            if subs_made_at[period_index]:
-                score_margin = period_margins[period_index]
-                plus_minus.append(score_margin - prev_score_margin)
-                prev_score_margin = score_margin
-                continue
-        else:
-            score_margin = score_margins.pop(0)
-            if i == 0:
-                plus_minus.append(score_margin)
-            else:
-                plus_minus.append(score_margin - prev_score_margin)
-            prev_score_margin = score_margin
-
-    return zip(player_ids, plus_minus, elapsed_time)
-
 
 def get_game_pbp(game_id):
     path = 'data/raw/pbp/' + str(game_id) + '.parquet'
@@ -167,7 +76,7 @@ def get_game_box_score(game_id):
 
 def get_season_games(season=Season.default):
     # Check to see if df is already saved (parquet)
-    path = 'data/raw/season_' + season + '_games.parquet'
+    path = 'data/raw/seasons/season_' + season + '_games.parquet'
     if os.path.exists(path):
         return pd.read_parquet(path)
     gamefinder_regular_season = leaguegamefinder.LeagueGameFinder(league_id_nullable='00',
@@ -490,10 +399,10 @@ def process_n_seasons(n=1):
         print(f'Processing season {season}...')
         process_season(season)
 
-def main():
+def scrape_season_games():
     n_seasons = 10
-    max_retries = 10
-    retry_delay = 5  # seconds
+    max_retries = 10000000
+    retry_delay = 30  # seconds
 
     for retry in range(max_retries):
         try:
@@ -508,14 +417,52 @@ def main():
                 if retry < max_retries - 1:
                     print(f"Retrying in {retry_delay} seconds...")
                     time.sleep(retry_delay)
-                    retry_delay += retry_delay  # exponential backoff
+                    # retry_delay += retry_delay  # exponential backoff
                 else:
                     print("Max retries exceeded. Exiting.")
 
 
+def get_player_info(player_id):
+    path = f'data/raw/player_info/{player_id}.parquet'
+    if os.path.exists(path):
+        return pd.read_parquet(path), False
+    player = commonplayerinfo.CommonPlayerInfo(player_id=player_id).get_data_frames()[0]
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    player.to_parquet(path)
+    return player, True
+
+
+def scrape_players():
+    directory = 'data/raw/lineup_diffs'
+    data = []
+    for filename in os.listdir(directory):
+        if filename.endswith(".pkl"):
+            with open(os.path.join(directory, filename), 'rb') as f:
+                data.extend(pickle.load(f))
+    players = set()
+    for sample in data:
+        players.update(sample['home'])
+        players.update(sample['away'])
+
+    retry_delay = 5  # seconds
+
+    for player_id in tqdm(players):
+        try:
+            player, do_sleep = get_player_info(player_id)
+            if do_sleep:
+                time_sleep = random.uniform(0.9, 1.5)
+                time.sleep(time_sleep)
+        except Exception as e:
+            print(f"Error occurred: {str(e)}")
+            print(traceback.format_exc())
+            time.sleep(retry_delay)
+
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    main()
+    scrape_players()
+    scrape_season_games()
+
+
 
 # Year Old (development)
 # Year in the NBA (rookies)
