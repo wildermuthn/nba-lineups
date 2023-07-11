@@ -9,6 +9,7 @@ import config
 import wandb
 import pickle
 from utils.utils import get_latest_file
+from tqdm import tqdm
 
 
 def save_checkpoint(state, filename):
@@ -23,12 +24,9 @@ def load_checkpoint(filename, model, optimizer):
     return epoch
 
 
-def save_model_configuration(filename, config, model_init_params):
-    # Remove pth from filename
+def save_model_configuration(filename, cfg, model_init_params):
     filename = filename[:-4]
-    # merge config and model_init_params into one dict
-    config_dict = {**config, **model_init_params}
-    # save dict to file as a pickle, named afer the model
+    config_dict = {'MODEL_PARAMS': cfg.MODEL_PARAMS, **model_init_params}
     with open(filename + '.pkl', 'wb') as f:
         pickle.dump(config_dict, f, pickle.HIGHEST_PROTOCOL)
 
@@ -48,18 +46,19 @@ def initialize_saved_model(model_filepath):
 
     # Initialize model
     print("Initializing model...")
+    params = cfg['MODEL_PARAMS']
     n_players = cfg['n_players']
     n_ages = cfg['n_ages']
     model = None
     if config.MODEL_PARAMS['model'] == 'LineupPredictorTransformer':
-        model = LineupPredictorTransformer(cfg.MODEL_PARAMS, n_players, n_ages)
+        model = LineupPredictorTransformer(params, n_players, n_ages)
     if config.MODEL_PARAMS['model'] == 'LineupPredictor':
-        model = LineupPredictor(cfg.MODEL_PARAMS, n_players, n_ages)
+        model = LineupPredictor(params, n_players, n_ages)
 
     if config.MODEL_PARAMS['optimizer'] == 'Adam':
-        optimizer = torch.optim.Adam(model.parameters(), lr=cfg.MODEL_PARAMS['lr'])
+        optimizer = torch.optim.Adam(model.parameters(), lr=params['lr'])
     else:
-        optimizer = torch.optim.SGD(model.parameters(), lr=cfg.MODEL_PARAMS['lr'])
+        optimizer = torch.optim.SGD(model.parameters(), lr=params['lr'])
 
     load_checkpoint(model_filepath, model, optimizer)
     return model, optimizer
@@ -148,17 +147,48 @@ def main():
 
 
 def eval():
-    model, optimizer = initialize_saved_model(get_latest_file('checkpoints'))
+    filepath = 'checkpoints/snowy-sponge-145__4.pth'
+    model, optimizer = initialize_saved_model(filepath)
     model.eval()
     # Check for GPU
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
     print("Loading data...")
     dataset = BasketballDataset(config.DATA_PATH)
+    player_info = dataset.player_info
+    generic_players = torch.tensor(
+        [[dataset.get_player_tensor_indexes({'IS_GENERIC': True}, 0) for i in range(10)]]
+    ).to(device)
+    pred = model(generic_players)
+    pps = pred.item()
+    print(f"Predicted points per game: {pps}")
+    player_preds = {}
+
+    # filter player_info for 'GAMES_PLAYED_CURRENT_SEASON_FLAG' == 'Y'
+    player_info = {k: v for k, v in player_info.items() if v['TO_YEAR'] > 2020}
+
+    # loop over key values of player_info dict with tqdm
+    for player_id, player in tqdm(player_info.items()):
+        # replace first element in generic_players with player
+        player_id_age = dataset.get_player_tensor_indexes(player, 0)
+        player_id_age = torch.tensor(player_id_age).to(device)
+        generic_players[0][6] = player_id_age
+        pred = model(generic_players)
+        pps = pred.item()
+        player_preds[player['DISPLAY_FIRST_LAST']] = pps
+
+    sorted_players = sorted(player_preds.items(), key=lambda x: x[1], reverse=True)
+    # print top 10 name and pps
+    for i, player in enumerate(sorted_players):
+        print(f"{i+1}. {player[0]}: {player[1]}")
+
+    print('done')
+
 
 
 if __name__ == "__main__":
     main()
+    # eval()
     # elements = an array of 10 zeros
     # elements = [0] * 10
     # replacement = 1

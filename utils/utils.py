@@ -3,11 +3,12 @@ import itertools
 
 
 def get_latest_file(dir_path):
+    print('todo')
     # Get list of all files only from the given directory
-    files = filter(os.path.isfile, os.listdir(dir_path))
-    files = [os.path.join(dir_path, f) for f in files] # add path to each file
-    files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
-    return files[0] if files else None
+    # files = filter(os.path.isfile, os.listdir(dir_path))
+    # files = [os.path.join(dir_path, f) for f in files] # add path to each file
+    # files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
+    # return files[0] if files else None
 
 
 def all_combinations(elements, replacement):

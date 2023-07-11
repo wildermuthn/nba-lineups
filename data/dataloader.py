@@ -129,6 +129,9 @@ class BasketballDataset(Dataset):
                 # print stack trace
                 traceback.print_exc()
                 continue
+        all_plus_minus_per_second = [sample['plus_minus_per_second'] for sample in self.data]
+        self.min_plus_minus_per_second = min(all_plus_minus_per_second)
+        self.max_plus_minus_per_second = max(all_plus_minus_per_second)
         # self.augment_with_generic_players()
 
     def augment_with_generic_players(self):
@@ -212,7 +215,8 @@ class BasketballDataset(Dataset):
         )
         # concat away and home
         players = torch.cat((home, away))
-        plus_minus_per_second = torch.tensor([sample['plus_minus_per_second']])
+        # plus_minus_per_second = torch.tensor([sample['plus_minus_per_second']])
+        plus_minus_per_second = torch.tensor([(sample['plus_minus_per_second'] - self.min_plus_minus_per_second) / (self.max_plus_minus_per_second - self.min_plus_minus_per_second)])
         # Return the sample as a tuple
         return players, plus_minus_per_second
 

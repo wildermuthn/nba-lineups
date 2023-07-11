@@ -54,6 +54,9 @@ class LineupPredictorTransformer(nn.Module):
         self.player_embedding = nn.Embedding(n_players+5, player_embedding_dim)
         self.age_embedding = nn.Embedding(n_ages+5, player_embedding_dim)
 
+        self.away_team_embedding = nn.Embedding(1, player_embedding_dim)
+        self.home_team_embedding = nn.Embedding(1, player_embedding_dim)
+
         self.transformer_encoder = nn.TransformerEncoder(
             nn.TransformerEncoderLayer(d_model=player_embedding_dim, nhead=params['n_head']), num_layers=params['n_layers'])
 
@@ -84,6 +87,11 @@ class LineupPredictorTransformer(nn.Module):
 
         # Reshape x to have 3 dimensions
         x = x.view(x.shape[0], x.shape[1], -1)
+
+        # Add home team embedding to first five players
+        x[:, :5, :] += self.home_team_embedding.weight
+        # Add away team embedding to last five players
+        x[:, 5:, :] += self.away_team_embedding.weight
 
         # Reshape x to meet the input requirements of TransformerEncoder
         x = x.permute(1, 0, 2)
