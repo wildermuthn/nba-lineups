@@ -22,4 +22,4 @@ def test_loop(dataloader, model, loss_fn, epoch):
     test_loss /= num_batches
     correct /= size
     print(f"Test Error: \n Avg loss: {test_loss:>8f} \n")
-    wandb.log({"test_loss": test_loss, "step": (epoch + 1) * len(dataloader.dataset)})
+    wandb.log({"test_loss": test_loss, "step": (epoch + 1) * len(dataloader.dataset) + len(X)})
