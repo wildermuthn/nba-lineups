@@ -213,5 +213,5 @@ def eval(filepath=None):
 
 
 if __name__ == "__main__":
-    # main()
-    eval('checkpoints/hearty-microwave-210__3000.pth')
+    main()
+    # eval('checkpoints/hearty-microwave-210__3000.pth')

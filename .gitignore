@@ -4,3 +4,4 @@ __pycache__/
 /wandb/
 /player_predictions.txt
 /checkpoints/
+/data/raw.tar.gz
