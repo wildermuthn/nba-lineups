@@ -2,7 +2,7 @@
 DATA_PATH = 'data/raw'
 
 # Batch size for the DataLoader
-BATCH_SIZE = 12000
+BATCH_SIZE = 10000
 
 # Model parameters
 MODEL_PARAMS = {
