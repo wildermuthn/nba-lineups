@@ -17,7 +17,8 @@ def train_loop(dataloader, model, loss_fn, optimizer, epoch):
         pred = model(X)
         loss = loss_fn(pred, y)
         loss.backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=.01)
+        if model.gradient_clipping:
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=.01)
         optimizer.step()
         optimizer.zero_grad()
         wandb.log({"train_loss": loss.item(),

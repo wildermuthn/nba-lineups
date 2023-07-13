@@ -5,11 +5,22 @@ import pickle
 import pandas as pd
 import traceback
 from tqdm import tqdm
+import itertools
+import random
+
 
 class BasketballDataset(Dataset):
-    def __init__(self, directory):
+    def __init__(self, config, transform):
+        self.transform = transform
+        self.min_max_target = config.MODEL_PARAMS['min_max_target']
         self.data = []
+        self.num_generic_players = 0
+        self.player_total_seconds = {}
+        self.player_total_seconds_threshold = config.MODEL_PARAMS['player_total_seconds_threshold']
+        self.lineups_skipped = 0
 
+        directory = config.DATA_PATH
+        self.lineup_time_played_threshold = config.MODEL_PARAMS['lineup_time_played_threshold']
         # Get lineup diffs
         lineup_dir = os.path.join(directory, 'lineup_diffs')
         self.lineup_diffs = []
@@ -76,6 +87,26 @@ class BasketballDataset(Dataset):
         self.player_id_to_index = None
         self.create_player_id_idx()
 
+        # Get total seconds per player
+        for sample in self.lineup_diffs:
+            home_lineup = sample['home']
+            away_lineup = sample['away']
+            # Get plus_minus
+            time_played = sample['time_played']
+            # Add player total minutes
+            for player_id in home_lineup:
+                if player_id not in self.player_total_seconds:
+                    self.player_total_seconds[player_id] = 0
+                self.player_total_seconds[player_id] += time_played
+            for player_id in away_lineup:
+                if player_id not in self.player_total_seconds:
+                    self.player_total_seconds[player_id] = 0
+                self.player_total_seconds[player_id] += time_played
+
+        # Add to player_info
+        for player_id in self.player_total_seconds:
+            self.player_info[player_id]['TOTAL_SECONDS'] = self.player_total_seconds[player_id]
+
         # Create self.data
         for sample in self.lineup_diffs:
             # Get home and away lineups
@@ -85,9 +116,20 @@ class BasketballDataset(Dataset):
                 # Get plus_minus
                 plus_minus = sample['plus_minus']
                 time_played = sample['time_played']
-                if time_played == 0:
+                # Add player total minutes
+                for player_id in home_lineup:
+                    player_total_seconds = self.player_total_seconds[player_id]
+                    if player_total_seconds < self.player_total_seconds_threshold:
+                        self.lineups_skipped += 1
+                        continue
+                for player_id in away_lineup:
+                    player_total_seconds = self.player_total_seconds[player_id]
+                    if player_total_seconds < self.player_total_seconds_threshold:
+                        self.lineups_skipped += 1
+                        continue
+                if time_played < self.lineup_time_played_threshold:
                     continue
-                plus_minus_per_second = plus_minus / time_played
+                plus_minus_per_minute = plus_minus / time_played * 60
                 # Get home and away player info
                 home_player_info = []
                 away_player_info = []
@@ -100,6 +142,7 @@ class BasketballDataset(Dataset):
                             'PERSON_ID': len(self.player_ids) + 1,
                             'IS_GENERIC': True
                         }
+                        self.num_generic_players += 1
                     home_player_info.append(player_info)
                 for player_id in away_lineup:
                     try:
@@ -110,6 +153,7 @@ class BasketballDataset(Dataset):
                             'PERSON_ID': len(self.player_ids) + 1,
                             'IS_GENERIC': True
                         }
+                        self.num_generic_players += 1
                     away_player_info.append(player_info)
                 # Add to self.data
                 # Ensure there are exactly 5 players on each team, or don't add the data
@@ -121,7 +165,7 @@ class BasketballDataset(Dataset):
                 self.data.append({
                     'home': home_player_info,
                     'away': away_player_info,
-                    'plus_minus_per_second': plus_minus_per_second,
+                    'plus_minus_per_minute': plus_minus_per_minute,
                     'years_ago': game_info['YEARS_AGO'],
                 })
             except Exception as e:
@@ -129,9 +173,12 @@ class BasketballDataset(Dataset):
                 # print stack trace
                 traceback.print_exc()
                 continue
-        all_plus_minus_per_second = [sample['plus_minus_per_second'] for sample in self.data]
-        self.min_plus_minus_per_second = min(all_plus_minus_per_second)
-        self.max_plus_minus_per_second = max(all_plus_minus_per_second)
+        all_plus_minus_per_minute = [sample['plus_minus_per_minute'] for sample in self.data]
+        self.min_plus_minus_per_minute = min(all_plus_minus_per_minute)
+        self.max_plus_minus_per_minute = max(all_plus_minus_per_minute)
+        print(f"Number of generic players: {self.num_generic_players}")
+        print(f"Number of lineups skipped: {self.lineups_skipped}")
+
         # self.augment_with_generic_players()
 
     def augment_with_generic_players(self):
@@ -205,6 +252,8 @@ class BasketballDataset(Dataset):
 
     def __getitem__(self, idx):
         sample = self.data[idx]
+        if self.transform:
+            sample = self.transform(sample)
         years_ago = sample['years_ago']
         # Convert lists of player IDs to tensors
         away = torch.tensor(
@@ -216,11 +265,36 @@ class BasketballDataset(Dataset):
         # concat away and home
         players = torch.cat((home, away))
         # plus_minus_per_second = torch.tensor([sample['plus_minus_per_second']])
-        plus_minus_per_second = torch.tensor([(sample['plus_minus_per_second'] - self.min_plus_minus_per_second) / (self.max_plus_minus_per_second - self.min_plus_minus_per_second)])
-        # Return the sample as a tuple
-        return players, plus_minus_per_second
+        if self.min_max_target:
+            plus_minus_per_minute = torch.tensor([(sample['plus_minus_per_minute'] - self.min_plus_minus_per_minute) / (self.max_plus_minus_per_minute - self.min_plus_minus_per_minute)])
+        else:
+            plus_minus_per_minute = torch.tensor([sample['plus_minus_per_minute']])
+        return players, plus_minus_per_minute
 
     def split(self, train_fraction):
         train_length = int(train_fraction * len(self))
         eval_length = len(self) - train_length
         return torch.utils.data.random_split(self, [train_length, eval_length])
+
+
+class Permute(object):
+    def __init__(self):
+        pass
+
+    def __call__(self, sample):
+        home = sample['home']
+        away = sample['away']
+        plus_minus_per_minute = sample['plus_minus_per_minute']
+        years_ago = sample['years_ago']
+        # Generate all possible permutations
+        home_permutations = list(itertools.permutations(home))
+        home_permutation = random.sample(home_permutations, 1)[0]
+        away_permutations = list(itertools.permutations(away))
+        away_permutation = random.sample(away_permutations, 1)[0]
+        # Add to new_samples
+        return {
+            'home': home_permutation,
+            'away': away_permutation,
+            'plus_minus_per_minute': plus_minus_per_minute,
+            'years_ago': years_ago
+        }

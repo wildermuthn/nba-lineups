@@ -1,15 +1,19 @@
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
-from data.dataloader import BasketballDataset
+from data.dataloader import BasketballDataset, Permute
 from model.train import train_loop
 from model.test import test_loop
-from model.model import LineupPredictor, LineupPredictorTransformer
+from model.model import LineupPredictor, LineupPredictorTransformer, LineupPredictorJustEmbedding
 import config
 import wandb
 import pickle
 from utils.utils import get_latest_file
 from tqdm import tqdm
+from tqdm.auto import trange
+import os
+from torchvision import transforms
+import itertools
 
 
 def save_checkpoint(state, filename):
@@ -40,28 +44,36 @@ def load_model_configurations(model_filepath):
     return config_dict
 
 
-def initialize_saved_model(model_filepath):
-    # Load model configuration
-    cfg = load_model_configurations(model_filepath)
-
+def initialize_model(model_filepath, dataset):
     # Initialize model
     print("Initializing model...")
-    params = cfg['MODEL_PARAMS']
-    n_players = cfg['n_players']
-    n_ages = cfg['n_ages']
+    saved_config = None
+    if model_filepath is not None:
+        saved_config = load_model_configurations(model_filepath)
+        params = saved_config['MODEL_PARAMS']
+        n_players = saved_config['n_players']
+        n_ages = saved_config['n_ages']
+    else:
+        params = config.MODEL_PARAMS
+        n_players = len(dataset.player_ids)
+        n_ages = len(dataset.player_ages_set)
+
     model = None
     if config.MODEL_PARAMS['model'] == 'LineupPredictorTransformer':
         model = LineupPredictorTransformer(params, n_players, n_ages)
     if config.MODEL_PARAMS['model'] == 'LineupPredictor':
         model = LineupPredictor(params, n_players, n_ages)
+    if config.MODEL_PARAMS['model'] == 'LineupPredictorJustEmbedding':
+        model = LineupPredictorJustEmbedding(params, n_players, n_ages)
 
     if config.MODEL_PARAMS['optimizer'] == 'Adam':
         optimizer = torch.optim.Adam(model.parameters(), lr=params['lr'])
     else:
         optimizer = torch.optim.SGD(model.parameters(), lr=params['lr'])
 
-    load_checkpoint(model_filepath, model, optimizer)
-    return model, optimizer
+    if model_filepath is not None:
+        load_checkpoint(model_filepath, model, optimizer)
+    return model, optimizer, saved_config
 
 
 def main():
@@ -69,18 +81,18 @@ def main():
                config=config.MODEL_PARAMS)
 
     print("Loading data...")
-    dataset = BasketballDataset(config.DATA_PATH)
+
+    dataset = BasketballDataset(config, Permute())
 
     g = torch.Generator()
     g.manual_seed(42)
-
     train_dataset, eval_dataset = dataset.split(train_fraction=0.8)
 
     train_dataloader = DataLoader(train_dataset,
                                   batch_size=config.BATCH_SIZE,
                                   shuffle=True,
                                   pin_memory=True,
-                                  generator=g
+                                  generator=g,
                                   )
     test_dataloader = DataLoader(eval_dataset,
                                  batch_size=config.BATCH_SIZE,
@@ -104,6 +116,8 @@ def main():
         model = LineupPredictorTransformer(config.MODEL_PARAMS, n_players, n_ages)
     if config.MODEL_PARAMS['model'] == 'LineupPredictor':
         model = LineupPredictor(config.MODEL_PARAMS, n_players, n_ages)
+    if config.MODEL_PARAMS['model'] == 'LineupPredictorJustEmbedding':
+        model = LineupPredictorJustEmbedding(config.MODEL_PARAMS, n_players, n_ages)
 
     if config.MODEL_PARAMS['optimizer'] == 'Adam':
         optimizer = torch.optim.Adam(model.parameters(), lr=config.MODEL_PARAMS['lr'])
@@ -125,36 +139,37 @@ def main():
     loss_fn = nn.MSELoss()
     model.to(device)
 
-    epochs = 100
+    epochs = 10000000
     for epoch in range(epochs):
         print(f"Epoch {epoch+1}\n-------------------------------")
         train_loop(train_dataloader, model, loss_fn, optimizer, epoch)
         test_loop(test_dataloader, model, loss_fn)
         checkpoint_path = f"checkpoints/{wandb.run.name}__{epoch}.pth"
-        save_checkpoint({
-            'epoch': epoch,
-            'model_state_dict': model.state_dict(),
-            'optimizer_state_dict': optimizer.state_dict(),
-            'loss': loss_fn,
-        }, checkpoint_path)
-        save_model_configuration(
-            checkpoint_path,
-            config,
-            { 'n_players': n_players, 'n_ages': n_ages }
-        )
+        if epoch % 50 == 0:
+            save_checkpoint({
+                'epoch': epoch,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'loss': loss_fn,
+            }, checkpoint_path)
+            save_model_configuration(
+                checkpoint_path,
+                config,
+                { 'n_players': n_players, 'n_ages': n_ages }
+            )
 
     print("Done.")
 
 
-def eval():
-    filepath = 'checkpoints/snowy-sponge-145__4.pth'
-    model, optimizer = initialize_saved_model(filepath)
+def eval(filepath=None):
+    dataset = BasketballDataset(config, transform=None)
+    # filepath = 'checkpoints/avid-waterfall-148__4.pth'
+    model, optimizer, saved_config = initialize_model(filepath, dataset)
     model.eval()
     # Check for GPU
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
     print("Loading data...")
-    dataset = BasketballDataset(config.DATA_PATH)
     player_info = dataset.player_info
     generic_players = torch.tensor(
         [[dataset.get_player_tensor_indexes({'IS_GENERIC': True}, 0) for i in range(10)]]
@@ -165,36 +180,38 @@ def eval():
     player_preds = {}
 
     # filter player_info for 'GAMES_PLAYED_CURRENT_SEASON_FLAG' == 'Y'
-    player_info = {k: v for k, v in player_info.items() if v['TO_YEAR'] > 2020}
-
-    # loop over key values of player_info dict with tqdm
-    for player_id, player in tqdm(player_info.items()):
-        # replace first element in generic_players with player
-        player_id_age = dataset.get_player_tensor_indexes(player, 0)
-        player_id_age = torch.tensor(player_id_age).to(device)
-        generic_players[0][6] = player_id_age
-        pred = model(generic_players)
-        pps = pred.item()
-        player_preds[player['DISPLAY_FIRST_LAST']] = pps
+    player_info = {k: v for k, v in player_info.items() if v['TOTAL_SECONDS'] >
+                   config.MODEL_PARAMS['player_total_seconds_threshold'] and
+                   v['TO_YEAR'] == 2023
+                   }
+    batch_size = 1000*10
+    player_info_items = list(player_info.items())
+    for i in tqdm(range(0, len(player_info_items), batch_size)):
+        batch_player_info_items = player_info_items[i:i + batch_size]
+        batch_player_info = {k: v for k, v in batch_player_info_items}
+        batch_player_indexes = torch.tensor(
+            [dataset.get_player_tensor_indexes(v, 0) for k, v in batch_player_info.items()]
+        ).to(device)
+        # dimensions should be (batch_size, 10, 2)
+        batch_player_indexes = batch_player_indexes.view(-1, 10, 2)
+        pred = model(batch_player_indexes)
+        for n, (k, v) in enumerate(batch_player_info.items()):
+            player_preds[k] = pred[n].item()
 
     sorted_players = sorted(player_preds.items(), key=lambda x: x[1], reverse=True)
-    # print top 10 name and pps
-    for i, player in enumerate(sorted_players):
-        print(f"{i+1}. {player[0]}: {player[1]}")
+    # delete player_predictions.txt if it exists
+    if os.path.exists('player_predictions.txt'):
+        os.remove('player_predictions.txt')
+
+    with open('player_predictions.txt', 'a') as f:
+        for i, player in enumerate(sorted_players):
+            print(f"{i+1}. {player[0]}: {player[1]}")
+            # Write to new line in file
+            f.write(f"{i+1}. {player[0]}: {player[1]}\n")
 
     print('done')
 
 
-
 if __name__ == "__main__":
-    main()
-    # eval()
-    # elements = an array of 10 zeros
-    # elements = [0] * 10
-    # replacement = 1
-    # total = []
-    # for i in range(1, 2 ** len(elements) - 1):
-    #     print(bin(i)[2:])
-    #     new_elements = [replacement if (i & (1 << j)) else elements[j] for j in range(len(elements))]
-    #     print(new_elements)
-
+    # main()
+    eval('checkpoints/hearty-microwave-210__3000.pth')
