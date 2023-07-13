@@ -15,5 +15,5 @@ def train_loop(dataloader, model, loss_fn, optimizer, epoch):
         optimizer.step()
         optimizer.zero_grad()
         wandb.log({"train_loss": loss.item(),
-                   "samples": epoch * len(dataloader.dataset) + batch * len(X)
+                   "step": epoch * len(dataloader.dataset) + batch * len(X)
                    })

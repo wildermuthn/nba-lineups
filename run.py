@@ -143,7 +143,7 @@ def main():
     for epoch in range(epochs):
         print(f"Epoch {epoch+1}\n-------------------------------")
         train_loop(train_dataloader, model, loss_fn, optimizer, epoch)
-        test_loop(test_dataloader, model, loss_fn)
+        test_loop(test_dataloader, model, loss_fn, epoch)
         checkpoint_path = f"checkpoints/{wandb.run.name}__{epoch}.pth"
         if epoch % 50 == 0:
             save_checkpoint({

@@ -2,7 +2,7 @@ import torch
 import wandb
 
 
-def test_loop(dataloader, model, loss_fn):
+def test_loop(dataloader, model, loss_fn, epoch):
     # Set the model to evaluation mode - important for batch normalization and dropout layers
     # Unnecessary in this situation but added for best practices
     model.eval()
@@ -22,4 +22,4 @@ def test_loop(dataloader, model, loss_fn):
     test_loss /= num_batches
     correct /= size
     print(f"Test Error: \n Avg loss: {test_loss:>8f} \n")
-    wandb.log({"test_loss": test_loss})
+    wandb.log({"test_loss": test_loss, "step": (epoch + 1) * len(dataloader.dataset)})
