@@ -125,18 +125,18 @@ class LineupPredictorTransformer(nn.Module):
         # apply embedding to player ids and ages
         player_ids, player_ages = x.split(1, dim=2)
         player_ids_embedded = self.player_embedding(player_ids)
-        # player_ages_embedded = self.age_embedding(player_ages)
+        player_ages_embedded = self.age_embedding(player_ages)
 
         # Add player age embedding to player id embedding
-        x = player_ids_embedded
+        x = player_ids_embedded + player_ages_embedded
 
         # Check if any player_id is the generic player_id
         generic_player_mask = (player_ids == self.generic_player_id)
         if generic_player_mask.any():
             # Calculate the average embedding of all players
             avg_player_embedding = player_ids_embedded.mean(dim=1, keepdim=True)
-            # avg_age_embedding = player_ages_embedded.mean(dim=1, keepdim=True)
-            avg_embedding = avg_player_embedding
+            avg_age_embedding = player_ages_embedded.mean(dim=1, keepdim=True)
+            avg_embedding = avg_player_embedding + avg_age_embedding
             # Replace the embeddings of generic players with the average embedding
             x = torch.where(generic_player_mask.unsqueeze(-1), avg_embedding, x)
 
@@ -144,9 +144,9 @@ class LineupPredictorTransformer(nn.Module):
         x = x.view(x.shape[0], x.shape[1], -1)
 
         # # Add home team embedding to first five players
-        # x[:, :5, :] += self.home_team_embedding.weight
+        x[:, :5, :] += self.home_team_embedding.weight
         # # Add away team embedding to last five players
-        # x[:, 5:, :] += self.away_team_embedding.weight
+        x[:, 5:, :] += self.away_team_embedding.weight
 
         # Reshape x to meet the input requirements of TransformerEncoder
         x = x.permute(1, 0, 2)

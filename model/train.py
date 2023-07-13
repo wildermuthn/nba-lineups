@@ -1,5 +1,3 @@
-import torch.nn as nn
-import torch.nn.functional as F
 import torch
 import wandb
 
@@ -10,8 +8,7 @@ def train_loop(dataloader, model, loss_fn, optimizer, epoch):
     # Unnecessary in this situation but added for best practices
     model.train()
     for batch, (X, y) in enumerate(dataloader):
-        # Compute prediction and loss
-        step = batch * len(X) + len(X) * len(dataloader) * epoch
+        n_samples = (batch+1 * len(X)) + (len(X) * len(dataloader) * epoch)
         X = X.to(device)
         y = y.float().to(device)
         pred = model(X)
@@ -22,9 +19,5 @@ def train_loop(dataloader, model, loss_fn, optimizer, epoch):
         optimizer.step()
         optimizer.zero_grad()
         wandb.log({"train_loss": loss.item(),
-                   "step": step
+                   "n_samples": n_samples
                    })
-
-        if step % 10000 == 0:
-            loss, current = loss.item(), (batch + 1) * len(X)
-            print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
