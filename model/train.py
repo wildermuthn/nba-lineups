@@ -2,6 +2,7 @@ import torch
 from torch.cuda.amp import autocast, GradScaler
 import wandb
 
+
 def train_loop(dataloader, model, loss_fn, optimizer, epoch):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     scaler = GradScaler()
@@ -12,7 +13,7 @@ def train_loop(dataloader, model, loss_fn, optimizer, epoch):
         y = y.float().to(device)
 
         # Wrap the forward pass in the autocast context manager for mixed precision
-        with autocast():
+        with autocast(dtype=torch.bfloat16):
             pred = model(X)
             loss = loss_fn(pred, y)
 
