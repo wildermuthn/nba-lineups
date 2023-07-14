@@ -145,7 +145,7 @@ def main():
         last_step = train_loop(train_dataloader, model, loss_fn, optimizer, epoch)
         test_loop(test_dataloader, model, loss_fn, epoch, step=last_step)
         checkpoint_path = f"checkpoints/{wandb.run.name}__{epoch}.pth"
-        if epoch % 50 == 0:
+        if epoch % config.EPOCHS_PER_CHECKPOINT == 0:
             save_checkpoint({
                 'epoch': epoch,
                 'model_state_dict': model.state_dict(),
@@ -219,5 +219,5 @@ def eval(filepath=None):
 
 
 if __name__ == "__main__":
-    main()
-    # eval('checkpoints/glad-sound-223__10000.pth')
+    # main()
+    eval('checkpoints/snowy-forest-229__50.pth')
