@@ -191,10 +191,10 @@ def eval(filepath=None):
         player_id_age = dataset.get_player_tensor_indexes(player, 0)
         player_id_age = torch.tensor(player_id_age).to(device)
         generic_players[0][0] = player_id_age
-        generic_players[0][1] = player_id_age
-        generic_players[0][2] = player_id_age
-        generic_players[0][3] = player_id_age
-        generic_players[0][4] = player_id_age
+        # generic_players[0][1] = player_id_age
+        # generic_players[0][2] = player_id_age
+        # generic_players[0][3] = player_id_age
+        # generic_players[0][4] = player_id_age
         # generic_players[0][5] = player_id_age
         # generic_players[0][6] = player_id_age
         # generic_players[0][7] = player_id_age
@@ -219,5 +219,5 @@ def eval(filepath=None):
 
 
 if __name__ == "__main__":
-    # main()
-    eval('checkpoints/snowy-forest-229__50.pth')
+    main()
+    # eval('checkpoints/snowy-forest-229__50.pth')
