@@ -17,8 +17,9 @@ MODEL_PARAMS = {
     'lineup_time_played_threshold': 30,
     'player_total_seconds_threshold': 25*60*82,
     'min_max_target': True,
-    'gradient_clipping': True,
+    'gradient_clipping': False,
     'transformer_dropout': 0.4,
+    'xaiver_init': True,
     # Add any other parameters your model needs
 }
 

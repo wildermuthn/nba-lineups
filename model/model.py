@@ -114,12 +114,15 @@ class LineupPredictorTransformer(nn.Module):
         self.linear = torch.nn.Linear(player_embedding_dim, 1)
 
         # initialize weights
-        # init.xavier_uniform_(self.player_embedding.weight)
-        # init.xavier_uniform_(self.age_embedding.weight)
+        if params['xavier_init']:
+            init.xavier_uniform_(self.player_embedding.weight)
+            init.xavier_uniform_(self.age_embedding.weight)
+            init.xavier_uniform_(self.away_team_embedding.weight)
+            init.xavier_uniform_(self.home_team_embedding.weight)
         # self.init_weights()
 
     def init_weights(self) -> None:
-        init_range = 5.0
+        init_range = 50.0
         self.player_embedding.weight.data.uniform_(-init_range, init_range)
         self.age_embedding.weight.data.uniform_(-init_range, init_range)
         self.away_team_embedding.weight.data.uniform_(-init_range, init_range)
