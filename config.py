@@ -17,7 +17,7 @@ MODEL_PARAMS = {
     'lineup_time_played_threshold': 30,
     'player_total_seconds_threshold': 25*60*82,
     'min_max_target': True,
-    'gradient_clipping': False,
+    'gradient_clipping': True,
     'transformer_dropout': 0.4,
     # Add any other parameters your model needs
 }
