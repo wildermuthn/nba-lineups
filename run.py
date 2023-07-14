@@ -184,19 +184,25 @@ def eval(filepath=None):
                    config.MODEL_PARAMS['player_total_seconds_threshold'] and
                    v['TO_YEAR'] == 2023
                    }
-    batch_size = 1000*10
-    player_info_items = list(player_info.items())
-    for i in tqdm(range(0, len(player_info_items), batch_size)):
-        batch_player_info_items = player_info_items[i:i + batch_size]
-        batch_player_info = {k: v for k, v in batch_player_info_items}
-        batch_player_indexes = torch.tensor(
-            [dataset.get_player_tensor_indexes(v, 0) for k, v in batch_player_info.items()]
-        ).to(device)
-        # dimensions should be (batch_size, 10, 2)
-        batch_player_indexes = batch_player_indexes.view(-1, 10, 2)
-        pred = model(batch_player_indexes)
-        for n, (k, v) in enumerate(batch_player_info.items()):
-            player_preds[k] = pred[n].item()
+
+    # loop over key values of player_info dict with tqdm
+    for player_id, player in tqdm(player_info.items()):
+        # replace first element in generic_players with player
+        player_id_age = dataset.get_player_tensor_indexes(player, 0)
+        player_id_age = torch.tensor(player_id_age).to(device)
+        generic_players[0][0] = player_id_age
+        # generic_players[0][1] = player_id_age
+        # generic_players[0][2] = player_id_age
+        # generic_players[0][3] = player_id_age
+        # generic_players[0][4] = player_id_age
+        # generic_players[0][5] = player_id_age
+        # generic_players[0][6] = player_id_age
+        # generic_players[0][7] = player_id_age
+        # generic_players[0][8] = player_id_age
+        # generic_players[0][9] = player_id_age
+        pred = model(generic_players)
+        pps = pred.item()
+        player_preds[player['DISPLAY_FIRST_LAST']] = pps
 
     sorted_players = sorted(player_preds.items(), key=lambda x: x[1], reverse=True)
     # delete player_predictions.txt if it exists
@@ -213,5 +219,5 @@ def eval(filepath=None):
 
 
 if __name__ == "__main__":
-    main()
-    # eval('checkpoints/hearty-microwave-210__3000.pth')
+    # main()
+    eval('checkpoints/glad-sound-223__10000.pth')
