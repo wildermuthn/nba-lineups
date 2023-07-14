@@ -219,5 +219,5 @@ def eval(filepath=None):
 
 
 if __name__ == "__main__":
-    # main()
-    eval('checkpoints/glad-sound-223__10000.pth')
+    main()
+    # eval('checkpoints/glad-sound-223__10000.pth')

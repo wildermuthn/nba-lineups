@@ -6,18 +6,19 @@ BATCH_SIZE = 12000
 
 # Model parameters
 MODEL_PARAMS = {
-    'lr': 0.00001,
+    'lr': 0.001,
     'batch_size': BATCH_SIZE,
     'linear_embedding_dim': 128,
     'player_embedding_dim': 128,
     'model': 'LineupPredictorTransformer',
-    'n_head': 8,
-    'n_layers': 4,
+    'n_head': 4,
+    'n_layers': 2,
     'optimizer': 'Adam',
-    'lineup_time_played_threshold': 120,
+    'lineup_time_played_threshold': 30,
     'player_total_seconds_threshold': 25*60*82,
     'min_max_target': True,
     'gradient_clipping': False,
+    'transformer_dropout': 0.4,
     # Add any other parameters your model needs
 }
 

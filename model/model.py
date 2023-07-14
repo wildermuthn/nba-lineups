@@ -103,7 +103,13 @@ class LineupPredictorTransformer(nn.Module):
         self.home_team_embedding = nn.Embedding(1, player_embedding_dim)
 
         self.transformer_encoder = nn.TransformerEncoder(
-            nn.TransformerEncoderLayer(d_model=player_embedding_dim, nhead=params['n_head']), num_layers=params['n_layers'])
+            nn.TransformerEncoderLayer(
+                d_model=player_embedding_dim,
+                nhead=params['n_head'],
+                dropout=params['transformer_dropout']
+            ),
+            num_layers=params['n_layers'],
+        )
 
         self.linear = torch.nn.Linear(player_embedding_dim, 1)
 
