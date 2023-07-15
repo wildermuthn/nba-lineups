@@ -2,6 +2,8 @@ import torch
 from torch import nn
 import torch.nn.init as init
 
+import config
+
 
 class LineupPredictorJustEmbedding(torch.nn.Module):
 
@@ -119,16 +121,14 @@ class LineupPredictorTransformer(nn.Module):
             init.xavier_uniform_(self.age_embedding.weight)
             init.xavier_uniform_(self.away_team_embedding.weight)
             init.xavier_uniform_(self.home_team_embedding.weight)
-        # self.init_weights()
+        else:
+            self.init_weights(config.MODEL_PARAMS['specific_init'])
 
-    def init_weights(self) -> None:
-        init_range = 50.0
+    def init_weights(self, init_range) -> None:
         self.player_embedding.weight.data.uniform_(-init_range, init_range)
         self.age_embedding.weight.data.uniform_(-init_range, init_range)
         self.away_team_embedding.weight.data.uniform_(-init_range, init_range)
         self.home_team_embedding.weight.data.uniform_(-init_range, init_range)
-        self.linear.bias.data.zero_()
-        self.linear.weight.data.uniform_(-init_range, init_range)
 
     def forward(self, x):
         # apply embedding to player ids and ages
