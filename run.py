@@ -86,7 +86,7 @@ def main():
 
     g = torch.Generator()
     g.manual_seed(42)
-    train_dataset, eval_dataset = dataset.split(train_fraction=0.8)
+    train_dataset, eval_dataset = dataset.split(train_fraction=0.9)
 
     train_dataloader = DataLoader(train_dataset,
                                   batch_size=config.BATCH_SIZE,
