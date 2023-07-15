@@ -219,5 +219,5 @@ def eval(filepath=None):
 
 
 if __name__ == "__main__":
-    main()
-    # eval('checkpoints/snowy-forest-229__50.pth')
+    # main()
+    eval('checkpoints/lunar-forest-231__885.pth')
