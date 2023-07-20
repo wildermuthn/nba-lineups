@@ -110,6 +110,7 @@ class BasketballDataset(Dataset):
         for player_id in self.player_total_seconds:
             self.player_info[player_id]['TOTAL_SECONDS'] = self.player_total_seconds[player_id]
 
+        print(f'Number of raw lineups: {len(self.lineup_diffs)}')
 
         # Create self.data
         for sample in self.lineup_diffs:
