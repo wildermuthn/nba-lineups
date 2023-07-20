@@ -184,8 +184,12 @@ class BasketballDataset(Dataset):
         print(f"Number of generic players: {self.num_generic_players}")
         print(f"Number of lineups skipped: {self.lineups_skipped}")
 
+        # get random 200,000 items from scores
+        self.scores = random.sample(self.scores, 200000)
         self.mean_score = np.mean(self.scores)
         self.std_score = np.std(self.scores)
+        self.scores_z_scaled = [(score - self.mean_score) / self.std_score for score in self.scores]
+        self.scores_min_max_scaled = [(score - self.min_plus_minus_per_minute) / (self.max_plus_minus_per_minute - self.min_plus_minus_per_minute) for score in self.scores]
 
         # self.augment_with_generic_players()
 

@@ -143,7 +143,23 @@ def main():
     table = wandb.Table(data=scores_data, columns=["scores"])
     wandb.log({'plus_minus_per_minute_histogram': wandb.plot.histogram(
         table, "scores",
-        title="Score Distribution"
+        title="Score Distribution (raw)"
+    )})
+
+    scores = dataset.scores_z_scaled
+    scores_data = [[s] for s in scores]
+    table = wandb.Table(data=scores_data, columns=["scores"])
+    wandb.log({'plus_minus_per_minute_histogram': wandb.plot.histogram(
+        table, "scores",
+        title="Score Distribution (z-scaled)"
+    )})
+
+    scores = dataset.scores_min_max_scaled
+    scores_data = [[s] for s in scores]
+    table = wandb.Table(data=scores_data, columns=["scores"])
+    wandb.log({'plus_minus_per_minute_histogram': wandb.plot.histogram(
+        table, "scores",
+        title="Score Distribution (min-max scaled)"
     )})
 
     epochs = 10000000
