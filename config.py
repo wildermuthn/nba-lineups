@@ -17,6 +17,7 @@ MODEL_PARAMS = {
     'n_layers': 2,
     'optimizer': 'Adam',
     'lineup_time_played_threshold': 60,
+    'lineup_abs_point_max_threshold_per_60': 10,
     'player_total_seconds_threshold': 25*60*82,
     'min_max_target': False,
     'z_score_target': True,

@@ -20,6 +20,7 @@ class BasketballDataset(Dataset):
         self.player_total_seconds_threshold = config.MODEL_PARAMS['player_total_seconds_threshold']
         self.lineups_skipped = 0
         self.z_score_target = config.MODEL_PARAMS['z_score_target']
+        self.lineup_abs_point_max_threshold_per_60 = config.MODEL_PARAMS['lineup_abs_point_max_threshold_per_60']
 
         directory = config.DATA_PATH
         self.lineup_time_played_threshold = config.MODEL_PARAMS['lineup_time_played_threshold']
@@ -133,6 +134,8 @@ class BasketballDataset(Dataset):
                 if time_played < self.lineup_time_played_threshold:
                     continue
                 plus_minus_per_minute = plus_minus / time_played * 60
+                if abs(plus_minus_per_minute) > self.lineup_abs_point_max_threshold_per_60:
+                    continue
                 # Get home and away player info
                 home_player_info = []
                 away_player_info = []
@@ -176,18 +179,17 @@ class BasketballDataset(Dataset):
                 # print stack trace
                 traceback.print_exc()
                 continue
+
         all_plus_minus_per_minute = [sample['plus_minus_per_minute'] for sample in self.data]
         self.min_plus_minus_per_minute = min(all_plus_minus_per_minute)
         self.max_plus_minus_per_minute = max(all_plus_minus_per_minute)
+        self.mean_score = np.mean(all_plus_minus_per_minute)
+        self.std_score = np.std(all_plus_minus_per_minute)
         print(f"Number of generic players: {self.num_generic_players}")
         print(f"Number of lineups skipped: {self.lineups_skipped}")
 
         # get random 200,000 items from scores
         self.scores = random.sample(all_plus_minus_per_minute, 200000)
-        # remove any score that is more than 10 from 0
-        self.scores = [score for score in self.scores if abs(score) < 10]
-        self.mean_score = np.mean(self.scores)
-        self.std_score = np.std(self.scores)
         self.scores_z_scaled = [(score - self.mean_score) / self.std_score for score in self.scores]
         self.scores_min_max_scaled = [(score - self.min_plus_minus_per_minute) / (self.max_plus_minus_per_minute - self.min_plus_minus_per_minute) for score in self.scores]
 
