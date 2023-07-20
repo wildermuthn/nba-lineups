@@ -7,6 +7,7 @@ import traceback
 from tqdm import tqdm
 import itertools
 import random
+import numpy as np
 
 
 class BasketballDataset(Dataset):
@@ -19,6 +20,7 @@ class BasketballDataset(Dataset):
         self.player_total_seconds_threshold = config.MODEL_PARAMS['player_total_seconds_threshold']
         self.lineups_skipped = 0
         self.scores = []
+        self.z_score_target = config.MODEL_PARAMS['z_score_target']
 
         directory = config.DATA_PATH
         self.lineup_time_played_threshold = config.MODEL_PARAMS['lineup_time_played_threshold']
@@ -182,6 +184,9 @@ class BasketballDataset(Dataset):
         print(f"Number of generic players: {self.num_generic_players}")
         print(f"Number of lineups skipped: {self.lineups_skipped}")
 
+        self.mean_score = np.mean(self.scores)
+        self.std_score = np.std(self.scores)
+
         # self.augment_with_generic_players()
 
     def augment_with_generic_players(self):
@@ -268,10 +273,12 @@ class BasketballDataset(Dataset):
         # concat away and home
         players = torch.cat((home, away))
         # plus_minus_per_second = torch.tensor([sample['plus_minus_per_second']])
+        plus_minus_per_minute = None
         if self.min_max_target:
             plus_minus_per_minute = torch.tensor([(sample['plus_minus_per_minute'] - self.min_plus_minus_per_minute) / (self.max_plus_minus_per_minute - self.min_plus_minus_per_minute)])
-        else:
-            plus_minus_per_minute = torch.tensor([sample['plus_minus_per_minute']])
+        elif self.z_score_target:
+            plus_minus_per_minute = (sample['plus_minus_per_minute'] - self.mean_score) / self.std_score
+            plus_minus_per_minute = torch.tensor([plus_minus_per_minute])
         return players, plus_minus_per_minute
 
     def split(self, train_fraction):
