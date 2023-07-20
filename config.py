@@ -8,7 +8,7 @@ EPOCHS_PER_CHECKPOINT = 5
 
 # Model parameters
 MODEL_PARAMS = {
-    'lr': 0.001,
+    'lr': 0.0001,
     'batch_size': BATCH_SIZE,
     'linear_embedding_dim': 12,
     'player_embedding_dim': 12,
@@ -20,7 +20,7 @@ MODEL_PARAMS = {
     'player_total_seconds_threshold': 25*60*82,
     'min_max_target': True,
     'gradient_clipping': False,
-    'transformer_dropout': 0.4,
+    'transformer_dropout': 0,
     'xavier_init': True,
     # 'specific_init': 50.0
     # Add any other parameters your model needs
