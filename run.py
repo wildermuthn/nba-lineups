@@ -138,7 +138,7 @@ def main():
     wandb.watch(model, log='all', log_freq=100)
     loss_fn = nn.MSELoss()
     model.to(device)
-    scores = model.scores
+    scores = dataset.scores
     scores_data = [[s] for s in scores]
     table = wandb.Table(data=scores_data, columns=["scores"])
     wandb.log({'plus_minus_per_minute_histogram': wandb.plot.histogram(
