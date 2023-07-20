@@ -194,7 +194,10 @@ class BasketballDataset(Dataset):
         print(f"Number of lineups skipped: {self.lineups_skipped}")
 
         # get random 200,000 items from scores
-        self.scores = random.sample(all_plus_minus_per_minute, 200000)
+        if len(all_plus_minus_per_minute) > 200000:
+            self.scores = random.sample(all_plus_minus_per_minute, 200000)
+        else:
+            self.scores = all_plus_minus_per_minute
         self.scores_z_scaled = [(score - self.mean_score) / self.std_score for score in self.scores]
         self.scores_min_max_scaled = [(score - self.min_plus_minus_per_minute) / (self.max_plus_minus_per_minute - self.min_plus_minus_per_minute) for score in self.scores]
 
