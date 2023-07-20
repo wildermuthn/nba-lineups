@@ -2,21 +2,21 @@
 DATA_PATH = 'data/raw'
 
 # Batch size for the DataLoader
-BATCH_SIZE = 48000
+BATCH_SIZE = 12000
 
-EPOCHS_PER_CHECKPOINT = 50
+EPOCHS_PER_CHECKPOINT = 5
 
 # Model parameters
 MODEL_PARAMS = {
     'lr': 0.001,
     'batch_size': BATCH_SIZE,
-    'linear_embedding_dim': 4,
-    'player_embedding_dim': 4,
+    'linear_embedding_dim': 12,
+    'player_embedding_dim': 12,
     'model': 'LineupPredictorTransformer',
-    'n_head': 2,
-    'n_layers': 1,
+    'n_head': 4,
+    'n_layers': 2,
     'optimizer': 'Adam',
-    'lineup_time_played_threshold': 60,
+    'lineup_time_played_threshold': 30,
     'player_total_seconds_threshold': 25*60*82,
     'min_max_target': True,
     'gradient_clipping': False,

@@ -1,14 +1,15 @@
 import torch
 import wandb
 
+
 def train_loop(dataloader, model, loss_fn, optimizer, epoch):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.train()
     last_step = None
-    for batch, (X, y) in enumerate(dataloader):
-        X = X.to(device)
+    for batch, (xX, y) in enumerate(dataloader):
+        x = x.to(device)
         y = y.float().to(device)
-        pred = model(X)
+        pred = model(x)
         loss = loss_fn(pred, y)
         loss.backward()
         if model.gradient_clipping:
