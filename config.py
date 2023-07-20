@@ -19,7 +19,7 @@ MODEL_PARAMS = {
     'lineup_time_played_threshold': 60,
     'player_total_seconds_threshold': 25*60*82,
     'min_max_target': False,
-    'z_score_target': False,
+    'z_score_target': True,
     'gradient_clipping': False,
     'transformer_dropout': 0,
     'xavier_init': True,
