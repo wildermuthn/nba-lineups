@@ -16,7 +16,7 @@ def train_loop(dataloader, model, loss_fn, optimizer, epoch):
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=.01)
         optimizer.step()
         optimizer.zero_grad()
-        step = epoch * len(dataloader.dataset) + batch * len(X)
+        step = epoch * len(dataloader.dataset) + batch * len(x)
         last_step = step
         wandb.log({"train_loss": loss.item(),
                    "step": step
