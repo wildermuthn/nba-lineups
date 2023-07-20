@@ -273,12 +273,13 @@ class BasketballDataset(Dataset):
         # concat away and home
         players = torch.cat((home, away))
         # plus_minus_per_second = torch.tensor([sample['plus_minus_per_second']])
-        plus_minus_per_minute = None
         if self.min_max_target:
             plus_minus_per_minute = torch.tensor([(sample['plus_minus_per_minute'] - self.min_plus_minus_per_minute) / (self.max_plus_minus_per_minute - self.min_plus_minus_per_minute)])
         elif self.z_score_target:
             plus_minus_per_minute = (sample['plus_minus_per_minute'] - self.mean_score) / self.std_score
             plus_minus_per_minute = torch.tensor([plus_minus_per_minute])
+        else:
+            plus_minus_per_minute = torch.tensor([sample['plus_minus_per_minute']])
         return players, plus_minus_per_minute
 
     def split(self, train_fraction):
