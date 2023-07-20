@@ -4,7 +4,7 @@ DATA_PATH = 'data/raw'
 # Batch size for the DataLoader
 BATCH_SIZE = 48000
 
-EPOCHS_PER_CHECKPOINT = 5
+EPOCHS_PER_CHECKPOINT = 50
 
 # Model parameters
 MODEL_PARAMS = {
