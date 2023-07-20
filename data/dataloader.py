@@ -18,6 +18,7 @@ class BasketballDataset(Dataset):
         self.player_total_seconds = {}
         self.player_total_seconds_threshold = config.MODEL_PARAMS['player_total_seconds_threshold']
         self.lineups_skipped = 0
+        self.scores = []
 
         directory = config.DATA_PATH
         self.lineup_time_played_threshold = config.MODEL_PARAMS['lineup_time_played_threshold']
@@ -107,6 +108,7 @@ class BasketballDataset(Dataset):
         for player_id in self.player_total_seconds:
             self.player_info[player_id]['TOTAL_SECONDS'] = self.player_total_seconds[player_id]
 
+
         # Create self.data
         for sample in self.lineup_diffs:
             # Get home and away lineups
@@ -130,6 +132,7 @@ class BasketballDataset(Dataset):
                 if time_played < self.lineup_time_played_threshold:
                     continue
                 plus_minus_per_minute = plus_minus / time_played * 60
+                self.scores.append(plus_minus_per_minute)
                 # Get home and away player info
                 home_player_info = []
                 away_player_info = []

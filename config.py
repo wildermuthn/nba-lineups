@@ -8,7 +8,7 @@ EPOCHS_PER_CHECKPOINT = 5
 
 # Model parameters
 MODEL_PARAMS = {
-    'lr': 0.0001,
+    'lr': 0.00001,
     'batch_size': BATCH_SIZE,
     'linear_embedding_dim': 12,
     'player_embedding_dim': 12,
