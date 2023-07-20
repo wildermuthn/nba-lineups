@@ -132,7 +132,8 @@ class BasketballDataset(Dataset):
                     if player_total_seconds < self.player_total_seconds_threshold:
                         should_skip_sample = True
                 if time_played < self.lineup_time_played_threshold:
-                    should_skip_sample = True
+                    self.lineups_skipped += 1
+                    continue
                 plus_minus_per_minute = plus_minus / time_played * 60
                 if abs(plus_minus_per_minute) > self.lineup_abs_point_max_threshold_per_60:
                     should_skip_sample = True
@@ -181,6 +182,7 @@ class BasketballDataset(Dataset):
                 print('Got a problem')
                 # print stack trace
                 traceback.print_exc()
+                self.lineups_skipped += 1
                 continue
 
         all_plus_minus_per_minute = [sample['plus_minus_per_minute'] for sample in self.data]
