@@ -115,6 +115,7 @@ class BasketballDataset(Dataset):
         # Create self.data
         for sample in self.lineup_diffs:
             # Get home and away lineups
+            should_skip_sample = False
             try:
                 home_lineup = sample['home']
                 away_lineup = sample['away']
@@ -125,18 +126,17 @@ class BasketballDataset(Dataset):
                 for player_id in home_lineup:
                     player_total_seconds = self.player_total_seconds[player_id]
                     if player_total_seconds < self.player_total_seconds_threshold:
-                        self.lineups_skipped += 1
-                        continue
+                        should_skip_sample = True
                 for player_id in away_lineup:
                     player_total_seconds = self.player_total_seconds[player_id]
                     if player_total_seconds < self.player_total_seconds_threshold:
-                        self.lineups_skipped += 1
-                        continue
+                        should_skip_sample = True
                 if time_played < self.lineup_time_played_threshold:
-                    self.lineups_skipped += 1
-                    continue
+                    should_skip_sample = True
                 plus_minus_per_minute = plus_minus / time_played * 60
                 if abs(plus_minus_per_minute) > self.lineup_abs_point_max_threshold_per_60:
+                    should_skip_sample = True
+                if should_skip_sample:
                     self.lineups_skipped += 1
                     continue
                 # Get home and away player info
