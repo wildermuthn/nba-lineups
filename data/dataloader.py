@@ -19,7 +19,6 @@ class BasketballDataset(Dataset):
         self.player_total_seconds = {}
         self.player_total_seconds_threshold = config.MODEL_PARAMS['player_total_seconds_threshold']
         self.lineups_skipped = 0
-        self.scores = []
         self.z_score_target = config.MODEL_PARAMS['z_score_target']
 
         directory = config.DATA_PATH
@@ -185,7 +184,9 @@ class BasketballDataset(Dataset):
         print(f"Number of lineups skipped: {self.lineups_skipped}")
 
         # get random 200,000 items from scores
-        self.scores = random.sample(self.scores, 200000)
+        self.scores = random.sample(all_plus_minus_per_minute, 200000)
+        # remove any score that is more than 10 from 0
+        self.scores = [score for score in self.scores if abs(score) < 10]
         self.mean_score = np.mean(self.scores)
         self.std_score = np.std(self.scores)
         self.scores_z_scaled = [(score - self.mean_score) / self.std_score for score in self.scores]
