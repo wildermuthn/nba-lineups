@@ -132,9 +132,11 @@ class BasketballDataset(Dataset):
                         self.lineups_skipped += 1
                         continue
                 if time_played < self.lineup_time_played_threshold:
+                    self.lineups_skipped += 1
                     continue
                 plus_minus_per_minute = plus_minus / time_played * 60
                 if abs(plus_minus_per_minute) > self.lineup_abs_point_max_threshold_per_60:
+                    self.lineups_skipped += 1
                     continue
                 # Get home and away player info
                 home_player_info = []
