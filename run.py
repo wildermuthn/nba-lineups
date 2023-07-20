@@ -141,7 +141,7 @@ def main():
     scores = dataset.scores
     scores_data = [[s] for s in scores]
     table = wandb.Table(data=scores_data, columns=["scores"])
-    wandb.log({'plus_minus_per_minute_histogram': wandb.plot.histogram(
+    wandb.log({'plus_minus_per_minute_histogram_raw': wandb.plot.histogram(
         table, "scores",
         title="Score Distribution (raw)"
     )})
