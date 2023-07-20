@@ -6,7 +6,7 @@ def train_loop(dataloader, model, loss_fn, optimizer, epoch):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.train()
     last_step = None
-    for batch, (xX, y) in enumerate(dataloader):
+    for batch, (x, y) in enumerate(dataloader):
         x = x.to(device)
         y = y.float().to(device)
         pred = model(x)
