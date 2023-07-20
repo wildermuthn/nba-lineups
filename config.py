@@ -21,8 +21,8 @@ MODEL_PARAMS = {
     'min_max_target': True,
     'gradient_clipping': False,
     'transformer_dropout': 0.4,
-    'xavier_init': False,
-    'specific_init': 50.0
+    'xavier_init': True,
+    # 'specific_init': 50.0
     # Add any other parameters your model needs
 }
 
