@@ -133,7 +133,6 @@ class BasketballDataset(Dataset):
                 if time_played < self.lineup_time_played_threshold:
                     continue
                 plus_minus_per_minute = plus_minus / time_played * 60
-                self.scores.append(plus_minus_per_minute)
                 # Get home and away player info
                 home_player_info = []
                 away_player_info = []
