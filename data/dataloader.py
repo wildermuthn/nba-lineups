@@ -222,7 +222,7 @@ class BasketballDataset(Dataset):
                 # Combine home and away lineups
                 combined_lineup = sample['home'] + sample['away']
                 # Get plus_minus and years_ago
-                plus_minus_per_second = sample['plus_minus_per_second']
+                plus_minus_per_minute = sample['plus_minus_per_minute']
                 years_ago = sample['years_ago']
 
                 # Generate all possible combinations using binary numbers
@@ -233,7 +233,7 @@ class BasketballDataset(Dataset):
                     new_data.append({
                         'home': new_home_lineup,
                         'away': new_away_lineup,
-                        'plus_minus_per_second': plus_minus_per_second,
+                        'plus_minus_per_minute': plus_minus_per_minute,
                         'years_ago': years_ago,
                     })
         self.data.extend(new_data)
