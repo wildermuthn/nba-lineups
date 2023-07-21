@@ -201,7 +201,7 @@ class BasketballDataset(Dataset):
         self.scores_z_scaled = [(score - self.mean_score) / self.std_score for score in self.scores]
         self.scores_min_max_scaled = [(score - self.min_plus_minus_per_minute) / (self.max_plus_minus_per_minute - self.min_plus_minus_per_minute) for score in self.scores]
 
-        # self.augment_with_generic_players()
+        self.augment_with_generic_players()
 
     def augment_with_generic_players(self):
         # For each sample, add additional samples that replace one or more players with a generic player
