@@ -163,8 +163,12 @@ class LineupPredictorTransformer(nn.Module):
         # Pass the sequence through the Transformer encoder
         x = self.transformer_encoder(x)
 
-        # Subtract the away team tokens from the home team tokens
-        x = x[5:, :, :] - x[:5, :, :]
+        # Sum the home team
+        x_home = x[:5, :, :].sum(dim=0)
+        # Sum the away team
+        x_away = x[5:, :, :].sum(dim=0)
+        # Subtract the away team from the home team
+        x = x_home - x_away
 
         # Pass the output through the linear layer
         x = self.linear(x)
