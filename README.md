@@ -14,3 +14,4 @@
 - `gcloud compute ssh --zone us-central1-c nba-lineups-v100-1`
 - `cd nba-lineups/data`
 - `tar -xzvf raw.tar.gz`
+
