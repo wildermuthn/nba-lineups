@@ -111,7 +111,7 @@ class LineupPredictorTransformer(nn.Module):
             num_layers=params['n_layers'],
         )
 
-        self.linear = torch.nn.Linear(player_embedding_dim, 1)
+        self.linear = torch.nn.Linear(player_embedding_dim/2, 1)
 
         # initialize weights
         if params['xavier_init']:
@@ -157,14 +157,14 @@ class LineupPredictorTransformer(nn.Module):
         # # Add away team embedding to last five players
         x[:, 5:, :] += self.away_team_embedding.weight
 
-        # # Get the first five token (home) and shuffle them
-        # home_tokens = x[:, :5, :]
-        # home_tokens = home_tokens[:, torch.randperm(home_tokens.size()[1]), :]
-        # # Get the last five token (away) and shuffle them
-        # away_tokens = x[:, 5:, :]
-        # away_tokens = away_tokens[:, torch.randperm(away_tokens.size()[1]), :]
-        # # Concatenate the home and away tokens
-        # x = torch.cat((home_tokens, away_tokens), dim=1)
+        # Get the first five token (home) and shuffle them
+        home_tokens = x[:, :5, :]
+        home_tokens = home_tokens[:, torch.randperm(home_tokens.size()[1]), :]
+        # Get the last five token (away) and shuffle them
+        away_tokens = x[:, 5:, :]
+        away_tokens = away_tokens[:, torch.randperm(away_tokens.size()[1]), :]
+        # Concatenate the home and away tokens
+        x = torch.cat((home_tokens, away_tokens), dim=1)
 
         # Reshape x to meet the input requirements of TransformerEncoder
         x = x.permute(1, 0, 2)
@@ -174,12 +174,11 @@ class LineupPredictorTransformer(nn.Module):
 
         # Sum the home team
         x_home = x[:5, :, :].sum(dim=0)
+        x_home = self.linear(x_home)
         # Sum the away team
         x_away = x[5:, :, :].sum(dim=0)
+        x_away = self.linear(x_away)
         # Subtract the away team from the home team
         x = x_home - x_away
-
-        # Pass the output through the linear layer
-        x = self.linear(x)
 
         return x

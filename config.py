@@ -2,17 +2,17 @@
 DATA_PATH = 'data/raw'
 
 # Batch size for the DataLoader
-BATCH_SIZE = 85736
+BATCH_SIZE = 23000
 
 EPOCHS_PER_CHECKPOINT = 100
 
 # Model parameters
 MODEL_PARAMS = {
-    'lr': 0.01,
+    'lr': 0.0001,
     'batch_size': BATCH_SIZE,
     'linear_embedding_dim': 12,
-    'player_embedding_dim': 1,
-    'model': 'LineupPredictorJustEmbedding',
+    'player_embedding_dim': 12,
+    'model': 'LineupPredictorTransformer',
     'n_head': 4,
     'n_layers': 2,
     'optimizer': 'Adam',
