@@ -199,8 +199,6 @@ def eval_lineups(filepath):
         generator=g,
     )
 
-    # Initialize model
-    print("Initializing model...")
     model, optimizer, saved_config = initialize_model(filepath, dataset)
 
     # Check for GPU
@@ -220,7 +218,19 @@ def eval_lineups(filepath):
             pred = model(X)
             # pred.shape = (batch_size, 1)
             # concat X, y, pred
-            lineup_preds.append(torch.cat((X, y, pred), dim=1))
+
+            # Convert to numpy
+            X = X.cpu().numpy()
+            y = y.cpu().numpy()
+            pred = pred.cpu().numpy()
+
+            # Concatenate X, y, pred
+            X = np.concatenate((X, y), axis=1)
+            X = np.concatenate((X, pred), axis=1)
+
+            # Add to lineup_preds
+            lineup_preds.append(X)
+
     lineup_preds = torch.cat(lineup_preds, dim=0)
     lineup_preds = lineup_preds.cpu().numpy()
     # lineup_preds.shape = (n_lineups, 12)
