@@ -24,7 +24,7 @@ MODEL_PARAMS = {
     'gradient_clipping': False,
     'transformer_dropout': 0,
     'xavier_init': True,
-    'augment_with_generic_players': False,
+    'augment_with_generic_players': True,
     # 'specific_init': 50.0
     # Add any other parameters your model needs
 }
