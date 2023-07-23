@@ -237,7 +237,7 @@ def eval_lineups(filepath):
         lineup = lineup_preds[i]
         clean_lineup = []
         for j in range(10):
-            player_points = lineup[-1]
+            player_points = lineup[-2]
             player_index = int(lineup[j])
             player_info = dataset.player_index_to_player_info[player_index]
             if j > 4:
