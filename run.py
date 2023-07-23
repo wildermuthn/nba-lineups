@@ -237,7 +237,7 @@ def eval_lineups(filepath):
         lineup = lineup_preds[i]
         clean_lineup = []
         for j in range(10):
-            player_points = lineup[-2]
+            player_points = lineup[-1]
             player_index = int(lineup[j])
             player_info = dataset.player_index_to_player_info[player_index]
             if j > 4:
@@ -251,7 +251,7 @@ def eval_lineups(filepath):
         clean_lineup.append(lineup[-1])
         lineup_pred_clean.append(clean_lineup)
     # sort by predicted points per game
-    lineup_pred_clean = sorted(lineup_pred_clean, key=lambda x: x[-2])
+    lineup_pred_clean = sorted(lineup_pred_clean, key=lambda x: x[-1])
     # print top 10
     for i in range(10):
         lineup = lineup_pred_clean[-i-1]
