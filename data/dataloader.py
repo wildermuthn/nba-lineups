@@ -23,6 +23,7 @@ class BasketballDataset(Dataset):
         self.lineup_abs_point_max_threshold_per_60 = config.MODEL_PARAMS['lineup_abs_point_max_threshold_per_60']
         self.augment_with_generic_players = config.MODEL_PARAMS['augment_with_generic_players']
 
+        self.player_index_to_player_info = {}
         directory = config.DATA_PATH
         self.lineup_time_played_threshold = config.MODEL_PARAMS['lineup_time_played_threshold']
         # Get lineup diffs
@@ -245,6 +246,9 @@ class BasketballDataset(Dataset):
 
     def create_player_id_idx(self):
         self.player_id_to_index = {player_id: index for index, player_id in enumerate(self.player_ids)}
+        for player_id, index in self.player_id_to_index.items():
+            player_info = self.player_info[player_id]
+            self.player_index_to_player_info[index] = player_info
         self.player_id_to_index[len(self.player_ids) + 1] = len(self.player_ids) + 1
 
     def get_player_index(self, player_info):

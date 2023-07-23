@@ -14,6 +14,7 @@ from tqdm.auto import trange
 import os
 from torchvision import transforms
 import itertools
+import numpy as np
 
 
 def save_checkpoint(state, filename):
@@ -180,6 +181,95 @@ def main():
                 config,
                 { 'n_players': n_players, 'n_ages': n_ages }
             )
+
+    print("Done.")
+
+def eval_lineups(filepath):
+    print("Loading data...")
+    dataset = BasketballDataset(config, Permute())
+    g = torch.Generator()
+    g.manual_seed(42)
+    train_dataset, eval_dataset = dataset.split(train_fraction=0.9)
+
+    dataloader = DataLoader(
+        train_dataset,
+        batch_size=config.BATCH_SIZE,
+        shuffle=True,
+        pin_memory=True,
+        generator=g,
+    )
+
+    model, optimizer, saved_config = initialize_model(filepath, dataset)
+
+    # Check for GPU
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
+    model.eval()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    player_info = dataset.player_info
+    lineup_preds = []
+    with torch.no_grad():
+        for X, y in dataloader:
+            X = X.to(device)
+            # X.shape = (batch_size, 10, 2)
+            print('X', X.shape)
+            y = y.float().to(device)
+            # y.shape = (batch_size, 1)
+            print('y', y.shape)
+            pred = model(X)
+            print('pred', pred.shape)
+            # pred.shape = (batch_size, 1)
+
+            # Take the first element of X from its 3rd dimension
+            X = X[:, :, 0]
+            # reshape X to (batch_size, 10)
+            X = X.reshape(X.shape[0], X.shape[1])
+            lineup_preds.append(torch.cat((X, y, pred), dim=1))
+    lineup_preds = torch.cat(lineup_preds, dim=0)
+    lineup_preds = lineup_preds.cpu().numpy()
+    # lineup_preds.shape = (n_lineups, 12)
+    # replace first 10 tokens in each lineup with the actual player names,
+    # using dataset.player_index_to_player_info
+    lineup_pred_clean = []
+    player_total_points = {}
+    for i in range(lineup_preds.shape[0]):
+        lineup = lineup_preds[i]
+        clean_lineup = []
+        for j in range(10):
+            player_points = lineup[-1]
+            player_index = int(lineup[j])
+            player_info = dataset.player_index_to_player_info[player_index]
+            if j > 4:
+                player_points = 1 - player_points
+            if player_info['DISPLAY_FIRST_LAST'] not in player_total_points:
+                player_total_points[player_info['DISPLAY_FIRST_LAST']] = [player_points]
+            else:
+                player_total_points[player_info['DISPLAY_FIRST_LAST']].append(player_points)
+            clean_lineup.append(player_info['DISPLAY_FIRST_LAST'])
+        clean_lineup.append(lineup[-2])
+        clean_lineup.append(lineup[-1])
+        lineup_pred_clean.append(clean_lineup)
+    # sort by predicted points per game
+    lineup_pred_clean = sorted(lineup_pred_clean, key=lambda x: x[-1])
+    # print top 10
+    for i in range(10):
+        lineup = lineup_pred_clean[-i-1]
+        print(f"{i+1} Home. {lineup[0]} | {lineup[1]} | {lineup[2]} | {lineup[3]} | {lineup[4]}")
+        print(f"{i+1} Away. {lineup[5]} | {lineup[6]} | {lineup[7]} | {lineup[8]} | {lineup[9]}")
+        print(f"Actual points: {lineup[-2]}")
+        print(f"Predicted points: {lineup[-1]}")
+        print()
+    player_average_points = {}
+    # For each player in player_total_points, average their points
+    for player, points_arr in player_total_points.items():
+        player_average_points[player] = np.mean(points_arr)
+    # sort by average points
+    player_average_points = sorted(player_average_points.items(), key=lambda x: x[1])
+    # print top 10
+    for i in range(100):
+        player = player_average_points[-i-1]
+        print(f"{i+1} {player[0]}: {player[1]}")
 
     print("Done.")
 
