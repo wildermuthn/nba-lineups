@@ -111,9 +111,7 @@ class LineupPredictorTransformer(nn.Module):
             num_layers=params['n_layers'],
         )
 
-        assert player_embedding_dim % 2 == 0
-
-        self.linear = torch.nn.Linear(int(player_embedding_dim/2), 1)
+        self.linear = torch.nn.Linear(int(player_embedding_dim*5), 1)
 
         # initialize weights
         if params['xavier_init']:
@@ -175,10 +173,12 @@ class LineupPredictorTransformer(nn.Module):
         x = self.transformer_encoder(x)
 
         # Sum the home team
-        x_home = x[:5, :, :].sum(dim=0)
+        x_home = x[:5, :, :]
+        x_home = x_home.view(x_home.shape[1], -1)
         x_home = self.linear(x_home)
         # Sum the away team
-        x_away = x[5:, :, :].sum(dim=0)
+        x_away = x[5:, :, :]
+        x_away = x_away.view(x_away.shape[1], -1)
         x_away = self.linear(x_away)
         # Subtract the away team from the home team
         x = x_home - x_away
