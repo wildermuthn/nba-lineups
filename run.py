@@ -267,7 +267,7 @@ def eval_lineups(filepath):
     # sort by average points
     player_average_points = sorted(player_average_points.items(), key=lambda x: x[1])
     # print top 10
-    for i in range(10):
+    for i in range(100):
         player = player_average_points[-i-1]
         print(f"{i+1} {player[0]}: {player[1]}")
 
