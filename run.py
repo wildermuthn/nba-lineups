@@ -231,18 +231,22 @@ def eval_lineups(filepath):
     # lineup_preds.shape = (n_lineups, 12)
     # replace first 10 tokens in each lineup with the actual player names,
     # using dataset.player_index_to_player_info
+    lineup_pred_clean = []
     for i in range(lineup_preds.shape[0]):
         lineup = lineup_preds[i]
+        clean_lineup = []
         for j in range(10):
             player_index = int(lineup[j])
             player_info = dataset.player_index_to_player_info[player_index]
-            print(player_info)
-            lineup[j] = player_info['DISPLAY_LAST_COMMA_FIRST']
+            clean_lineup.append(player_info['DISPLAY_LAST_COMMA_FIRST'])
+        clean_lineup.append(lineup[-2])
+        clean_lineup.append(lineup[-1])
+        lineup_pred_clean.append(clean_lineup)
     # sort by predicted points per game
-    lineup_preds = lineup_preds[lineup_preds[:, -1].argsort()]
+    lineup_pred_clean = sorted(lineup_pred_clean, key=lambda x: x[-1])
     # print top 10
     for i in range(10):
-        lineup = lineup_preds[-i-1]
+        lineup = lineup_pred_clean[-i-1]
         print(f"{i+1}. {lineup[0]} {lineup[1]} {lineup[2]} {lineup[3]} {lineup[4]} {lineup[5]} {lineup[6]} {lineup[7]} {lineup[8]} {lineup[9]}")
         print(f"Predicted points per game: {lineup[-1]}")
         print()
