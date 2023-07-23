@@ -213,24 +213,15 @@ def eval_lineups(filepath):
         for X, y in dataloader:
             X = X.to(device)
             # X.shape = (batch_size, 10)
+            print('X', X.shape)
             y = y.float().to(device)
             # y.shape = (batch_size, 1)
+            print('y', y.shape)
             pred = model(X)
+            print('pred', pred.shape)
             # pred.shape = (batch_size, 1)
             # concat X, y, pred
-
-            # Convert to numpy
-            X = X.cpu().numpy()
-            y = y.cpu().numpy()
-            pred = pred.cpu().numpy()
-
-            # Concatenate X, y, pred
-            X = np.concatenate((X, y), axis=1)
-            X = np.concatenate((X, pred), axis=1)
-
-            # Add to lineup_preds
-            lineup_preds.append(X)
-
+            lineup_preds.append(torch.cat((X, y, pred), dim=1))
     lineup_preds = torch.cat(lineup_preds, dim=0)
     lineup_preds = lineup_preds.cpu().numpy()
     # lineup_preds.shape = (n_lineups, 12)
