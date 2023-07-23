@@ -334,3 +334,4 @@ def eval(filepath=None):
 if __name__ == "__main__":
     # main()
     eval_lineups('checkpoints/easy-sun-272__12200.pth')
+    eval('checkpoints/easy-sun-272__12200.pth')
