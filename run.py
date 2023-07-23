@@ -247,8 +247,8 @@ def eval_lineups(filepath):
     # print top 10
     for i in range(10):
         lineup = lineup_pred_clean[-i-1]
-        print(f"{i+1} Home. {lineup[0]} - {lineup[1]} - {lineup[2]} - {lineup[3]} - {lineup[4]}")
-        print(f"{i+1} Away. {lineup[5]} - {lineup[6]} - {lineup[7]} - {lineup[8]} - {lineup[9]}")
+        print(f"{i+1} Home. {lineup[0]} | {lineup[1]} | {lineup[2]} | {lineup[3]} | {lineup[4]}")
+        print(f"{i+1} Away. {lineup[5]} | {lineup[6]} | {lineup[7]} | {lineup[8]} | {lineup[9]}")
         print(f"Actual points: {lineup[-2]}")
         print(f"Predicted points: {lineup[-1]}")
         print()
