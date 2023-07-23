@@ -214,6 +214,7 @@ class BasketballDataset(Dataset):
         }
 
         count = 0
+        new_samples_count = 0
         print(len(self.data))
         for sample in tqdm(self.data):
             count += 1
@@ -235,7 +236,10 @@ class BasketballDataset(Dataset):
                         'plus_minus_per_minute': plus_minus_per_minute,
                         'years_ago': years_ago,
                     })
+        new_samples_count += len(new_data)
         self.data.extend(new_data)
+        # return indices of the new data
+        return list(range(len(self.data) - new_samples_count, len(self.data)))
 
     def __len__(self):
         return len(self.data)

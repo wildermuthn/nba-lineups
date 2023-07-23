@@ -89,7 +89,12 @@ def main():
     g.manual_seed(42)
     train_dataset, eval_dataset = dataset.split(train_fraction=0.9)
     if config.MODEL_PARAMS['augment_with_generic_players']:
-        train_dataset.augment_with_generic_players()
+        indices = train_dataset.dataset.augment_with_generic_players()
+        # add indices to current subset indices, and shuffle
+        train_dataset.indices = np.concatenate((train_dataset.indices, indices))
+        np.random.shuffle(train_dataset.indices)
+
+
 
     train_dataloader = DataLoader(train_dataset,
                                   batch_size=config.BATCH_SIZE,
