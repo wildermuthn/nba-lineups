@@ -111,7 +111,9 @@ class LineupPredictorTransformer(nn.Module):
             num_layers=params['n_layers'],
         )
 
-        self.linear = torch.nn.Linear(player_embedding_dim/2, 1)
+        assert player_embedding_dim % 2 == 0
+
+        self.linear = torch.nn.Linear(int(player_embedding_dim/2), 1)
 
         # initialize weights
         if params['xavier_init']:
