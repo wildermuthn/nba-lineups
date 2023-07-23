@@ -239,6 +239,10 @@ def eval_lineups(filepath):
         for j in range(10):
             player_index = int(lineup[j])
             player_info = dataset.player_index_to_player_info[player_index]
+            if player_info['DISPLAY_FIRST_LAST'] not in player_total_points:
+                player_total_points[player_info['DISPLAY_FIRST_LAST']] = [lineup[-1]]
+            else:
+                player_total_points[player_info['DISPLAY_FIRST_LAST']].append(lineup[-1])
             clean_lineup.append(player_info['DISPLAY_FIRST_LAST'])
         clean_lineup.append(lineup[-2])
         clean_lineup.append(lineup[-1])
@@ -253,6 +257,17 @@ def eval_lineups(filepath):
         print(f"Actual points: {lineup[-2]}")
         print(f"Predicted points: {lineup[-1]}")
         print()
+    player_average_points = {}
+    # For each player in player_total_points, average their points
+    for player, points_arr in player_total_points.items():
+        player_average_points[player] = np.mean(points_arr)
+    # sort by average points
+    player_average_points = sorted(player_average_points.items(), key=lambda x: x[1])
+    # print top 10
+    for i in range(10):
+        player = player_average_points[-i-1]
+        print(f"{i+1} {player[0]}: {player[1]}")
+
     print("Done.")
 
 
