@@ -2,7 +2,7 @@
 DATA_PATH = 'data/raw'
 
 # Batch size for the DataLoader
-BATCH_SIZE = 23
+BATCH_SIZE = 23000
 
 EPOCHS_PER_CHECKPOINT = 100
 
