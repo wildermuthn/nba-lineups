@@ -2,17 +2,17 @@
 DATA_PATH = 'data/raw'
 
 # Batch size for the DataLoader
-BATCH_SIZE = 24000
+BATCH_SIZE = 85736
 
 EPOCHS_PER_CHECKPOINT = 100
 
 # Model parameters
 MODEL_PARAMS = {
-    'lr': 0.00001,
+    'lr': 0.01,
     'batch_size': BATCH_SIZE,
     'linear_embedding_dim': 12,
-    'player_embedding_dim': 12,
-    'model': 'LineupPredictorTransformer',
+    'player_embedding_dim': 1,
+    'model': 'LineupPredictorJustEmbedding',
     'n_head': 4,
     'n_layers': 2,
     'optimizer': 'Adam',
@@ -24,6 +24,7 @@ MODEL_PARAMS = {
     'gradient_clipping': False,
     'transformer_dropout': 0,
     'xavier_init': True,
+    'augment_with_generic_players': False,
     # 'specific_init': 50.0
     # Add any other parameters your model needs
 }

@@ -21,6 +21,7 @@ class BasketballDataset(Dataset):
         self.lineups_skipped = 0
         self.z_score_target = config.MODEL_PARAMS['z_score_target']
         self.lineup_abs_point_max_threshold_per_60 = config.MODEL_PARAMS['lineup_abs_point_max_threshold_per_60']
+        self.augment_with_generic_players = config.MODEL_PARAMS['augment_with_generic_players']
 
         directory = config.DATA_PATH
         self.lineup_time_played_threshold = config.MODEL_PARAMS['lineup_time_played_threshold']
@@ -201,7 +202,8 @@ class BasketballDataset(Dataset):
         self.scores_z_scaled = [(score - self.mean_score) / self.std_score for score in self.scores]
         self.scores_min_max_scaled = [(score - self.min_plus_minus_per_minute) / (self.max_plus_minus_per_minute - self.min_plus_minus_per_minute) for score in self.scores]
 
-        # self.augment_with_generic_players()
+        if self.augment_with_generic_players:
+            self.augment_with_generic_players()
 
     def augment_with_generic_players(self):
         # For each sample, add additional samples that replace one or more players with a generic player

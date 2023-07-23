@@ -8,31 +8,29 @@ import config
 class LineupPredictorJustEmbedding(torch.nn.Module):
 
     def __init__(self, params, n_players, n_ages):
-        print(params)
         super(LineupPredictorJustEmbedding, self).__init__()
         self.gradient_clipping = params['gradient_clipping']
         self.generic_player_id = torch.tensor(n_players + 1, dtype=torch.int64).to('cuda')
+        self.batch_size = params['batch_size']
         player_embedding_dim = params['player_embedding_dim']
-        linear_embedding_dim = params['linear_embedding_dim']
-        total_players = n_players + 2 # For General Players
-
+        total_players = n_players
         self.player_embedding = nn.Embedding(total_players, player_embedding_dim)
-        self.linear2 = torch.nn.Linear(player_embedding_dim*10, 1)
+        self.age_embedding = nn.Embedding(n_ages, player_embedding_dim)
+        self.home_embedding = torch.nn.Parameter(torch.randn(1, player_embedding_dim))
+
+    def get_player_embedding(self, player_id):
+        t = torch.tensor(player_id, dtype=torch.int64).to('cuda')
+        return self.player_embedding(t)
 
     def forward(self, x):
-        # apply embedding to player ids and ages
         (player_ids, player_ages) = x.split(1, dim=2)
-        player_ids_embedded = self.player_embedding(player_ids)
-        x = player_ids_embedded
-
-        generic_player_mask = (player_ids == self.generic_player_id)
-        if generic_player_mask.any():
-            avg_player_embedding = player_ids_embedded.mean(dim=1, keepdim=True)
-            avg_embedding = avg_player_embedding
-            x = torch.where(generic_player_mask.unsqueeze(-1), avg_embedding, x)
-
+        x = self.player_embedding(player_ids) + self.age_embedding(player_ages)
+        home_x = x[:, :5]
+        away_x = x[:, 5:]
+        sum_home_x = torch.sum(home_x, dim=1)
+        sum_away_x = torch.sum(away_x, dim=1)
+        x = sum_home_x - sum_away_x + self.home_embedding
         x = x.view(x.shape[0], -1)
-        x = self.linear2(x)
         return x
 
 class LineupPredictor(torch.nn.Module):
@@ -143,6 +141,8 @@ class LineupPredictorTransformer(nn.Module):
         generic_player_mask = (player_ids == self.generic_player_id)
         if generic_player_mask.any():
             # Calculate the average embedding of all players
+
+            # WRONG - this is the average embedding of the current lineup
             avg_player_embedding = player_ids_embedded.mean(dim=1, keepdim=True)
             avg_age_embedding = player_ages_embedded.mean(dim=1, keepdim=True)
             avg_embedding = avg_player_embedding + avg_age_embedding
@@ -156,6 +156,15 @@ class LineupPredictorTransformer(nn.Module):
         x[:, :5, :] += self.home_team_embedding.weight
         # # Add away team embedding to last five players
         x[:, 5:, :] += self.away_team_embedding.weight
+
+        # # Get the first five token (home) and shuffle them
+        # home_tokens = x[:, :5, :]
+        # home_tokens = home_tokens[:, torch.randperm(home_tokens.size()[1]), :]
+        # # Get the last five token (away) and shuffle them
+        # away_tokens = x[:, 5:, :]
+        # away_tokens = away_tokens[:, torch.randperm(away_tokens.size()[1]), :]
+        # # Concatenate the home and away tokens
+        # x = torch.cat((home_tokens, away_tokens), dim=1)
 
         # Reshape x to meet the input requirements of TransformerEncoder
         x = x.permute(1, 0, 2)

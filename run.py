@@ -241,6 +241,42 @@ def eval(filepath=None):
     print('done')
 
 
+def eval_simple(filepath=None):
+    dataset = BasketballDataset(config, transform=None)
+    # filepath = 'checkpoints/avid-waterfall-148__4.pth'
+    model, optimizer, saved_config = initialize_model(filepath, dataset)
+    model.eval()
+    # Check for GPU
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
+    print("Loading data...")
+    player_info = dataset.player_info
+    player_info = {k: v for k, v in player_info.items() if v['TOTAL_SECONDS'] >
+                   config.MODEL_PARAMS['player_total_seconds_threshold'] and
+                   v['TO_YEAR'] == 2023
+                   }
+    player_preds = {}
+    # loop over key values of player_info dict with tqdm
+    for player_id, player in tqdm(player_info.items()):
+        # replace first element in generic_players with player
+        player_id_index, player_age_index = dataset.get_player_tensor_indexes(player, 0)
+        player_embedding = model.get_player_embedding(player_id_index)
+        player_preds[player['DISPLAY_FIRST_LAST']] = player_embedding.item()
+
+    sorted_players = sorted(player_preds.items(), key=lambda x: x[1], reverse=True)
+    # delete player_predictions.txt if it exists
+    if os.path.exists('player_predictions.txt'):
+        os.remove('player_predictions.txt')
+
+    with open('player_predictions.txt', 'a') as f:
+        for i, player in enumerate(sorted_players):
+            print(f"{i+1}. {player[0]}: {player[1]}")
+            # Write to new line in file
+            f.write(f"{i+1}. {player[0]}: {player[1]}\n")
+
+    print('done')
+
+
 if __name__ == "__main__":
     main()
-    # eval('checkpoints/zany-morning-266__1000.pth')
+    # eval_simple('checkpoints/swept-dust-292__500.pth')
