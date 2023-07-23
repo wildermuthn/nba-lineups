@@ -190,6 +190,8 @@ def eval_lineups(filepath):
     g = torch.Generator()
     g.manual_seed(42)
     train_dataset, eval_dataset = dataset.split(train_fraction=0.9)
+    if config.MODEL_PARAMS['augment_with_generic_players']:
+        train_dataset.augment_with_generic_players()
 
     dataloader = DataLoader(
         train_dataset,

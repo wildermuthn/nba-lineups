@@ -73,8 +73,8 @@ class LineupPredictor(torch.nn.Module):
         generic_player_mask = (player_ids == self.generic_player_id)
         if generic_player_mask.any():
             # Calculate the average embedding of all players
-            avg_player_embedding = player_ids_embedded.mean(dim=1, keepdim=True)
-            avg_age_embedding = player_ages_embedded.mean(dim=1, keepdim=True)
+            avg_player_embedding = self.player_embedding.weight.mean(dim=0, keepdim=True)
+            avg_age_embedding = self.age_embedding.weight.mean(dim=0, keepdim=True)
             avg_embedding = avg_player_embedding + avg_age_embedding
             # Replace the embeddings of generic players with the average embedding
             x = torch.where(generic_player_mask.unsqueeze(-1), avg_embedding, x)
