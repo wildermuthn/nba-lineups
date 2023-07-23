@@ -232,13 +232,14 @@ def eval_lineups(filepath):
     # replace first 10 tokens in each lineup with the actual player names,
     # using dataset.player_index_to_player_info
     lineup_pred_clean = []
+    player_total_points = {}
     for i in range(lineup_preds.shape[0]):
         lineup = lineup_preds[i]
         clean_lineup = []
         for j in range(10):
             player_index = int(lineup[j])
             player_info = dataset.player_index_to_player_info[player_index]
-            clean_lineup.append(player_info['DISPLAY_LAST_COMMA_FIRST'])
+            clean_lineup.append(player_info['DISPLAY_FIRST_LAST'])
         clean_lineup.append(lineup[-2])
         clean_lineup.append(lineup[-1])
         lineup_pred_clean.append(clean_lineup)
