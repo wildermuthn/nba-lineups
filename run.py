@@ -212,7 +212,7 @@ def eval_lineups(filepath):
     with torch.no_grad():
         for X, y in dataloader:
             X = X.to(device)
-            # X.shape = (batch_size, 10)
+            # X.shape = (batch_size, 10, 2)
             print('X', X.shape)
             y = y.float().to(device)
             # y.shape = (batch_size, 1)
@@ -220,7 +220,11 @@ def eval_lineups(filepath):
             pred = model(X)
             print('pred', pred.shape)
             # pred.shape = (batch_size, 1)
-            # concat X, y, pred
+
+            # Take the first element of X from its 3rd dimension
+            X = X[:, :, 0]
+            # reshape X to (batch_size, 10)
+            X = X.reshape(X.shape[0], X.shape[1])
             lineup_preds.append(torch.cat((X, y, pred), dim=1))
     lineup_preds = torch.cat(lineup_preds, dim=0)
     lineup_preds = lineup_preds.cpu().numpy()
