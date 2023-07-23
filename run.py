@@ -241,7 +241,7 @@ def eval_lineups(filepath):
             player_index = int(lineup[j])
             player_info = dataset.player_index_to_player_info[player_index]
             if j > 4:
-                player_points *= -1
+                player_points = 1 - player_points
             if player_info['DISPLAY_FIRST_LAST'] not in player_total_points:
                 player_total_points[player_info['DISPLAY_FIRST_LAST']] = [player_points]
             else:
