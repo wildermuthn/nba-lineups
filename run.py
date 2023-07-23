@@ -14,6 +14,7 @@ from tqdm.auto import trange
 import os
 from torchvision import transforms
 import itertools
+import numpy as np
 
 
 def save_checkpoint(state, filename):
@@ -183,6 +184,63 @@ def main():
 
     print("Done.")
 
+def eval_lineups(filepath):
+    print("Loading data...")
+    dataset = BasketballDataset(config, Permute())
+    g = torch.Generator()
+    g.manual_seed(42)
+    train_dataset, eval_dataset = dataset.split(train_fraction=0.9)
+
+    dataloader = DataLoader(
+        train_dataset,
+        batch_size=config.BATCH_SIZE,
+        shuffle=True,
+        pin_memory=True,
+        generator=g,
+    )
+
+    # Initialize model
+    print("Initializing model...")
+    model, optimizer, saved_config = initialize_model(filepath, dataset)
+
+    # Check for GPU
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
+    model.eval()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    player_info = dataset.player_info
+    lineup_preds = []
+    with torch.no_grad():
+        for X, y in dataloader:
+            X = X.to(device)
+            # X.shape = (batch_size, 10)
+            y = y.float().to(device)
+            # y.shape = (batch_size, 1)
+            pred = model(X)
+            # pred.shape = (batch_size, 1)
+            # concat X, y, pred
+            lineup_preds.append(torch.cat((X, y, pred), dim=1))
+    lineup_preds = torch.cat(lineup_preds, dim=0)
+    lineup_preds = lineup_preds.cpu().numpy()
+    # lineup_preds.shape = (n_lineups, 12)
+    # replace first 10 tokens in each lineup with the actual player names,
+    # using dataset.player_index_to_player_info
+    for i in range(lineup_preds.shape[0]):
+        lineup = lineup_preds[i]
+        for j in range(10):
+            player_index = int(lineup[j])
+            lineup[j] = player_info[player_index]['PLAYER_NAME']
+    # sort by predicted points per game
+    lineup_preds = lineup_preds[lineup_preds[:, -1].argsort()]
+    # print top 10
+    for i in range(10):
+        lineup = lineup_preds[-i-1]
+        print(f"{i+1}. {lineup[0]} {lineup[1]} {lineup[2]} {lineup[3]} {lineup[4]} {lineup[5]} {lineup[6]} {lineup[7]} {lineup[8]} {lineup[9]}")
+        print(f"Predicted points per game: {lineup[-1]}")
+        print()
+    print("Done.")
+
 
 def eval(filepath=None):
     dataset = BasketballDataset(config, transform=None)
@@ -243,4 +301,4 @@ def eval(filepath=None):
 
 if __name__ == "__main__":
     # main()
-    eval('checkpoints/easy-sun-272__12200.pth')
+    eval_lineups('checkpoints/easy-sun-272__12200.pth')
