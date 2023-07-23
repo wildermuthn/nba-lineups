@@ -235,7 +235,8 @@ def eval_lineups(filepath):
         lineup = lineup_preds[i]
         for j in range(10):
             player_index = int(lineup[j])
-            lineup[j] = player_info[player_index]['PLAYER_NAME']
+            player_info = dataset.player_index_to_player_info[player_index]
+            lineup[j] = player_info['PLAYER_NAME']
     # sort by predicted points per game
     lineup_preds = lineup_preds[lineup_preds[:, -1].argsort()]
     # print top 10
