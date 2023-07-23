@@ -237,12 +237,15 @@ def eval_lineups(filepath):
         lineup = lineup_preds[i]
         clean_lineup = []
         for j in range(10):
+            player_points = lineup[-1]
             player_index = int(lineup[j])
             player_info = dataset.player_index_to_player_info[player_index]
+            if j > 4:
+                player_points *= -1
             if player_info['DISPLAY_FIRST_LAST'] not in player_total_points:
-                player_total_points[player_info['DISPLAY_FIRST_LAST']] = [lineup[-1]]
+                player_total_points[player_info['DISPLAY_FIRST_LAST']] = [player_points]
             else:
-                player_total_points[player_info['DISPLAY_FIRST_LAST']].append(lineup[-1])
+                player_total_points[player_info['DISPLAY_FIRST_LAST']].append(player_points)
             clean_lineup.append(player_info['DISPLAY_FIRST_LAST'])
         clean_lineup.append(lineup[-2])
         clean_lineup.append(lineup[-1])
