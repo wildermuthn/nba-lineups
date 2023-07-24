@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
-from data.dataloader import BasketballDataset, Permute
+from data.dataloader import BasketballDataset
 from model.train import train_loop
 from model.test import test_loop
 from model.model import LineupPredictor, LineupPredictorTransformer, LineupPredictorJustEmbedding
@@ -83,7 +83,7 @@ def main():
 
     print("Loading data...")
 
-    dataset = BasketballDataset(config, Permute())
+    dataset = BasketballDataset(config)
 
     g = torch.Generator()
     g.manual_seed(42)
@@ -193,7 +193,7 @@ def main():
 
 def eval_lineups(filepath):
     print("Loading data...")
-    dataset = BasketballDataset(config, Permute())
+    dataset = BasketballDataset(config)
     g = torch.Generator()
     g.manual_seed(42)
     train_dataset, eval_dataset = dataset.split(train_fraction=0.9)

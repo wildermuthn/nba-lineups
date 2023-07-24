@@ -11,8 +11,7 @@ import numpy as np
 
 
 class BasketballDataset(Dataset):
-    def __init__(self, config, transform):
-        self.transform = transform
+    def __init__(self, config):
         self.min_max_target = config.MODEL_PARAMS['min_max_target']
         self.data = []
         self.num_generic_players = 0
@@ -280,8 +279,6 @@ class BasketballDataset(Dataset):
 
     def __getitem__(self, idx):
         sample = self.data[idx]
-        if self.transform:
-            sample = self.transform(sample)
         years_ago = sample['years_ago']
         # Convert lists of player IDs to tensors
         away = torch.tensor(
@@ -306,26 +303,3 @@ class BasketballDataset(Dataset):
         train_length = int(train_fraction * len(self))
         eval_length = len(self) - train_length
         return torch.utils.data.random_split(self, [train_length, eval_length])
-
-
-class Permute(object):
-    def __init__(self):
-        pass
-
-    def __call__(self, sample):
-        home = sample['home']
-        away = sample['away']
-        plus_minus_per_minute = sample['plus_minus_per_minute']
-        years_ago = sample['years_ago']
-        # Generate all possible permutations
-        home_permutations = list(itertools.permutations(home))
-        home_permutation = random.sample(home_permutations, 1)[0]
-        away_permutations = list(itertools.permutations(away))
-        away_permutation = random.sample(away_permutations, 1)[0]
-        # Add to new_samples
-        return {
-            'home': home_permutation,
-            'away': away_permutation,
-            'plus_minus_per_minute': plus_minus_per_minute,
-            'years_ago': years_ago
-        }
