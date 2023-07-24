@@ -377,3 +377,4 @@ def eval_simple(filepath=None):
 if __name__ == "__main__":
     # main()
     eval_lineups('checkpoints/summer-bush-307__300.pth')
+    eval('checkpoints/summer-bush-307__300.pth')
