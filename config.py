@@ -8,10 +8,10 @@ EPOCHS_PER_CHECKPOINT = 100
 
 # Model parameters
 MODEL_PARAMS = {
-    'lr': 0.00001,
+    'lr': 0.001,
     'batch_size': BATCH_SIZE,
-    'linear_embedding_dim': 12,
-    'player_embedding_dim': 12,
+    'linear_embedding_dim': 32,
+    'player_embedding_dim': 32,
     'model': 'LineupPredictorTransformer',
     'n_head': 4,
     'n_layers': 2,
@@ -22,7 +22,7 @@ MODEL_PARAMS = {
     'min_max_target': True,
     'z_score_target': False,
     'gradient_clipping': False,
-    'transformer_dropout': 0,
+    'transformer_dropout': 0.4,
     'xavier_init': True,
     'augment_with_generic_players': True,
     # 'specific_init': 50.0
