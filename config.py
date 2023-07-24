@@ -2,13 +2,13 @@
 DATA_PATH = 'data/raw'
 
 # Batch size for the DataLoader
-BATCH_SIZE = 34000
+BATCH_SIZE = 5000
 
 EPOCHS_PER_CHECKPOINT = 100
 
 # Model parameters
 MODEL_PARAMS = {
-    'lr': 0.0001,
+    'lr': 0.00001,
     'batch_size': BATCH_SIZE,
     'linear_embedding_dim': 12,
     'player_embedding_dim': 12,
