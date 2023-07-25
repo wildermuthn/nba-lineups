@@ -86,7 +86,16 @@ def main(trial):
     config.PARAMS['transformer_dropout'] = trial.suggest_float('transformer_dropout', 0.0, 0.5)
     config.PARAMS['xavier_init'] = trial.suggest_categorical('xavier_init', [True, False])
 
-    group = 'optuna_8'
+    # Check for run number in './run.txt', and if the file doesn't exist, create the file and set it to 10
+    if os.path.exists('./run.txt'):
+        with open('./run.txt', 'r') as f:
+            run = int(f.read())
+    else:
+        run = 10
+        with open('./run.txt', 'w') as f:
+            f.write(str(run))
+
+    group = f"optuna_{run}"
 
     wandb.init(
         project="nba-lineups",
