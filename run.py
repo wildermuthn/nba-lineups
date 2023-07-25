@@ -93,14 +93,14 @@ def objective(group=None, trial=None):
         config.PARAMS['xavier_init_toggle'] = 1 if config.PARAMS['xavier_init'] else 0
 
     if trial is not None:
-        wandb.init(
+        wandb_run = wandb.init(
             project="nba-lineups",
             config=config.PARAMS,
             group=group,
             name=f"{group}_trial_{trial.number}"
         )
     else:
-        wandb.init(
+        wandb_run = wandb.init(
             project="nba-lineups",
             config=config.PARAMS
         )
@@ -203,7 +203,8 @@ def objective(group=None, trial=None):
             test_loss = test_loop(test_dataloader, model, loss_fn, epoch, step=last_step)
             sorted_players = eval_standard(model=model, dataset=dataset)
             # log sorted players to wandb
-            wandb.log({'sorted_players': wandb.Table(data=sorted_players, columns=["player", "plus_minus", "offense", "defense"])})
+            wandb_table = wandb.Table(data=sorted_players, columns=["player", "plus_minus", "offense", "defense"])
+            wandb_run.log({"player_rankings": wandb_table})
             # if test_loss is nan, skip this trial
             if np.isnan(test_loss) and trial is not None:
                 wandb.finish()
@@ -369,7 +370,7 @@ def eval_standard(filepath=None, model=None, dataset=None):
         # generic_players[0][8] = player_id_age
         # generic_players[0][9] = player_id_age
         pred = model(generic_players)
-        home_pred, away_pred = pred.item()
+        home_pred, away_pred = pred.tolist()[0]
         player_preds[player['DISPLAY_FIRST_LAST']] = (home_pred - away_pred, home_pred, away_pred)
 
     sorted_players = sorted(player_preds.items(), key=lambda x: x[1][0], reverse=True)
