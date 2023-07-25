@@ -20,7 +20,7 @@ class BasketballDataset(Dataset):
         self.lineups_skipped = 0
         self.z_score_target = config.MODEL_PARAMS['z_score_target']
         self.lineup_abs_point_max_threshold_per_60 = config.MODEL_PARAMS['lineup_abs_point_max_threshold_per_60']
-
+        self.train_specific_season = config.MODEL_PARAMS['train_specific_season']
         self.player_index_to_player_info = {}
         directory = config.DATA_PATH
         self.lineup_time_played_threshold = config.MODEL_PARAMS['lineup_time_played_threshold']
@@ -197,6 +197,9 @@ class BasketballDataset(Dataset):
                 traceback.print_exc()
                 self.lineups_skipped += 1
                 continue
+
+        if self.train_specific_season is not None:
+            self.data = [sample for sample in self.data if sample['season_ago'] == self.train_specific_season]
 
         all_home_plus_per_minute = [sample['home_plus_per_minute'] for sample in self.data]
         all_away_plus_per_minute = [sample['away_plus_per_minute'] for sample in self.data]

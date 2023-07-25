@@ -2,7 +2,7 @@
 DATA_PATH = 'data/raw'
 
 # Batch size for the DataLoader
-BATCH_SIZE = 5
+BATCH_SIZE = 24000
 
 EPOCHS_PER_CHECKPOINT = 100
 
@@ -24,7 +24,8 @@ MODEL_PARAMS = {
     'gradient_clipping': False,
     'transformer_dropout': 0.4,
     'xavier_init': True,
-    'augment_with_generic_players': False,
+    'augment_with_generic_players': True,
+    'train_specific_season': 0,
     # 'specific_init': 50.0
     # Add any other parameters your model needs
 }
