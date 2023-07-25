@@ -465,5 +465,6 @@ def main_train():
 
 
 if __name__ == "__main__":
+    wandb.Table.MAX_ARTIFACTS_ROWS = 500000
     main_train()
 
