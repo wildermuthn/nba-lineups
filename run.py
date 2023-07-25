@@ -89,9 +89,9 @@ def main(trial):
     wandb.init(
         project="nba-lineups",
         config=config.PARAMS,
-        group='optuna_1',
+        group='optuna_2',
         reinit=True,
-        name=f"optuna_1_trial_{trial.number}"
+        name=f"optuna_2_trial_{trial.number}"
     )
 
     print("Loading data...")
