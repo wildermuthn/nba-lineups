@@ -122,6 +122,12 @@ class BasketballDataset(Dataset):
                 # Get plus_minus
                 plus_minus = sample['plus_minus']
                 time_played = sample['time_played']
+                home_plus = sample['home_plus']
+                away_plus = sample['away_plus']
+                starting_score_diff = sample['starting_score_diff']
+                game_type = sample['game_type']
+                season_ago = sample['season_ago']
+                season = sample['season']
                 # Add player total minutes
                 for player_id in home_lineup:
                     player_total_seconds = self.player_total_seconds[player_id]
@@ -134,9 +140,13 @@ class BasketballDataset(Dataset):
                 if time_played < self.lineup_time_played_threshold:
                     self.lineups_skipped += 1
                     continue
-                plus_minus_per_minute = plus_minus / time_played * 60
-                if abs(plus_minus_per_minute) > self.lineup_abs_point_max_threshold_per_60:
-                    should_skip_sample = True
+                home_plus_per_minute = home_plus / time_played * 60
+                away_plus_per_minute = away_plus / time_played * 60
+                if self.lineup_abs_point_max_threshold_per_60 is not False:
+                    if abs(home_plus_per_minute) > self.lineup_abs_point_max_threshold_per_60:
+                        should_skip_sample = True
+                    if abs(away_plus_per_minute) > self.lineup_abs_point_max_threshold_per_60:
+                        should_skip_sample = True
                 if should_skip_sample:
                     self.lineups_skipped += 1
                     continue
@@ -175,8 +185,11 @@ class BasketballDataset(Dataset):
                 self.data.append({
                     'home': home_player_info,
                     'away': away_player_info,
-                    'plus_minus_per_minute': plus_minus_per_minute,
+                    'home_plus_per_minute': home_plus_per_minute,
+                    'away_plus_per_minute': away_plus_per_minute,
                     'years_ago': game_info['YEARS_AGO'],
+                    'season_ago': season_ago,
+                    'game_type': game_type,
                 })
             except Exception as e:
                 print('Got a problem')
@@ -185,21 +198,36 @@ class BasketballDataset(Dataset):
                 self.lineups_skipped += 1
                 continue
 
-        all_plus_minus_per_minute = [sample['plus_minus_per_minute'] for sample in self.data]
-        self.min_plus_minus_per_minute = min(all_plus_minus_per_minute)
-        self.max_plus_minus_per_minute = max(all_plus_minus_per_minute)
-        self.mean_score = np.mean(all_plus_minus_per_minute)
-        self.std_score = np.std(all_plus_minus_per_minute)
+        all_home_plus_per_minute = [sample['home_plus_per_minute'] for sample in self.data]
+        all_away_plus_per_minute = [sample['away_plus_per_minute'] for sample in self.data]
+        all_plus_per_minute = all_home_plus_per_minute + all_away_plus_per_minute
+
+        self.min_home_plus_per_minute = min(all_home_plus_per_minute)
+        self.max_home_plus_per_minute = max(all_home_plus_per_minute)
+        self.mean_home_score = np.mean(all_home_plus_per_minute)
+        self.std_home_score = np.std(all_home_plus_per_minute)
+
+        self.min_away_plus_per_minute = min(all_away_plus_per_minute)
+        self.max_away_plus_per_minute = max(all_away_plus_per_minute)
+        self.mean_away_score = np.mean(all_away_plus_per_minute)
+        self.std_away_score = np.std(all_away_plus_per_minute)
+
+        self.min_plus_per_minute = min(all_plus_per_minute)
+        self.max_plus_per_minute = max(all_plus_per_minute)
+        self.mean_score = np.mean(all_plus_per_minute)
+        self.std_score = np.std(all_plus_per_minute)
+
         print(f"Number of generic players: {self.num_generic_players}")
         print(f"Number of lineups skipped: {self.lineups_skipped}")
 
         # get random 200,000 items from scores
-        if len(all_plus_minus_per_minute) > 200000:
-            self.scores = random.sample(all_plus_minus_per_minute, 200000)
+        if len(all_plus_per_minute) > 200000:
+            self.scores = random.sample(all_plus_per_minute, 200000)
         else:
-            self.scores = all_plus_minus_per_minute
+            self.scores = all_plus_per_minute
+
         self.scores_z_scaled = [(score - self.mean_score) / self.std_score for score in self.scores]
-        self.scores_min_max_scaled = [(score - self.min_plus_minus_per_minute) / (self.max_plus_minus_per_minute - self.min_plus_minus_per_minute) for score in self.scores]
+        self.scores_min_max_scaled = [(score - self.min_plus_per_minute) / (self.max_plus_per_minute - self.min_plus_per_minute) for score in self.scores]
 
     def augment_with_generic_players(self):
         # For each sample, add additional samples that replace one or more players with a generic player
@@ -221,7 +249,8 @@ class BasketballDataset(Dataset):
                 # Combine home and away lineups
                 combined_lineup = sample['home'] + sample['away']
                 # Get plus_minus and years_ago
-                plus_minus_per_minute = sample['plus_minus_per_minute']
+                home_plus_per_minute = sample['home_plus_per_minute']
+                away_plus_per_minute = sample['away_plus_per_minute']
                 years_ago = sample['years_ago']
 
                 # Generate all possible combinations using binary numbers
@@ -232,8 +261,11 @@ class BasketballDataset(Dataset):
                     new_data.append({
                         'home': new_home_lineup,
                         'away': new_away_lineup,
-                        'plus_minus_per_minute': plus_minus_per_minute,
                         'years_ago': years_ago,
+                        'home_plus_per_minute': home_plus_per_minute,
+                        'away_plus_per_minute': away_plus_per_minute,
+                        'game_type': sample['game_type'],
+                        'season_ago': sample['season_ago'],
                     })
         new_samples_count += len(new_data)
         self.data.extend(new_data)
@@ -280,24 +312,29 @@ class BasketballDataset(Dataset):
     def __getitem__(self, idx):
         sample = self.data[idx]
         years_ago = sample['years_ago']
-        # Convert lists of player IDs to tensors
         away = torch.tensor(
             [self.get_player_tensor_indexes(player_info, years_ago) for player_info in sample['away']]
         )
         home = torch.tensor(
             [self.get_player_tensor_indexes(player_info, years_ago) for player_info in sample['home']]
         )
-        # concat away and home
         players = torch.cat((home, away))
-        # plus_minus_per_second = torch.tensor([sample['plus_minus_per_second']])
         if self.min_max_target:
-            plus_minus_per_minute = torch.tensor([(sample['plus_minus_per_minute'] - self.min_plus_minus_per_minute) / (self.max_plus_minus_per_minute - self.min_plus_minus_per_minute)])
+            home_plus_per_minute = torch.tensor([(sample['home_plus_per_minute'] - self.min_home_plus_per_minute) / (self.max_home_plus_per_minute - self.min_home_plus_per_minute)])
+            away_plus_per_minute = torch.tensor([(sample['away_plus_per_minute'] - self.min_away_plus_per_minute) / (self.max_away_plus_per_minute - self.min_away_plus_per_minute)])
         elif self.z_score_target:
-            plus_minus_per_minute = (sample['plus_minus_per_minute'] - self.mean_score) / self.std_score
-            plus_minus_per_minute = torch.tensor([plus_minus_per_minute])
+            home_plus_per_minute = (sample['home_plus_per_minute'] - self.mean_home_score) / self.std_home_score
+            home_plus_per_minute = torch.tensor([home_plus_per_minute])
+            away_plus_per_minute = (sample['away_plus_per_minute'] - self.mean_away_score) / self.std_away_score
+            away_plus_per_minute = torch.tensor([away_plus_per_minute])
         else:
-            plus_minus_per_minute = torch.tensor([sample['plus_minus_per_minute']])
-        return players, plus_minus_per_minute
+            home_plus_per_minute = torch.tensor([sample['home_plus_per_minute']])
+            away_plus_per_minute = torch.tensor([sample['away_plus_per_minute']])
+
+        # concat home and away
+        plus_per_minute = torch.cat((home_plus_per_minute, away_plus_per_minute))
+
+        return players, plus_per_minute
 
     def split(self, train_fraction):
         train_length = int(train_fraction * len(self))

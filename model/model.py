@@ -178,7 +178,8 @@ class LineupPredictorTransformer(nn.Module):
         x_away = x[5:, :, :]
         x_away = x_away.view(x_away.shape[1], -1)
         x_away = self.linear(x_away)
-        # Subtract the away team from the home team
-        x = x_home - x_away
 
-        return x
+        # concat the two outputs
+        pred = torch.cat((x_home, x_away), dim=1)
+
+        return pred

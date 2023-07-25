@@ -35,12 +35,13 @@ class EventMsgType(Enum):
     PERIOD_BEGIN = 12
     PERIOD_END = 13
 
-def load_game_rotation(game_id):
+
+def load_game_rotation(game_id, reprocess=False):
     # set parquet path
     path_home = os.path.join(os.getcwd(), 'data', 'raw', 'game_rotations', game_id + '_home.parquet')
     path_away = os.path.join(os.getcwd(), 'data', 'raw', 'game_rotations', game_id + '_away.parquet')
     # check if parquet file exists
-    if os.path.exists(path_home) and os.path.exists(path_away):
+    if os.path.exists(path_home) and os.path.exists(path_away) and not reprocess:
         return pd.read_parquet(path_home), pd.read_parquet(path_away)
     rotations = gamerotation.GameRotation(game_id=game_id).get_data_frames()
     # save rotations file to parquet, ensuring directory exists
@@ -51,9 +52,9 @@ def load_game_rotation(game_id):
     return rotations
 
 
-def get_game_pbp(game_id):
+def get_game_pbp(game_id, reprocess=False):
     path = 'data/raw/pbp/' + str(game_id) + '.parquet'
-    if os.path.exists(path):
+    if os.path.exists(path) and not reprocess:
         return pd.read_parquet(path)
     else:
         pbp_response = playbyplay.PlayByPlay(game_id)
@@ -65,19 +66,21 @@ def get_game_pbp(game_id):
 
 def get_game_box_score(game_id):
     path = 'data/raw/box_score/' + str(game_id) + '.parquet'
-    if os.path.exists(path):
-        return pd.read_parquet(path)
-    box_score = boxscoresummaryv2.BoxScoreSummaryV2(game_id).get_data_frames()[0]
+    # if os.path.exists(path):
+    #     return pd.read_parquet(path)
+    box_score = boxscoresummaryv2.BoxScoreSummaryV2(game_id)
+    box_score = box_score.get_data_frames()
+    box_score = box_score[0]
     # Save box score to parquet
     os.makedirs(os.path.dirname(path), exist_ok=True)
     box_score.to_parquet(path, index=False)
     return box_score
 
 
-def get_season_games(season=Season.default):
+def get_season_games(season=Season.default, reprocess=False):
     # Check to see if df is already saved (parquet)
     path = 'data/raw/seasons/season_' + season + '_games.parquet'
-    if os.path.exists(path):
+    if os.path.exists(path) and not reprocess:
         return pd.read_parquet(path)
     gamefinder_regular_season = leaguegamefinder.LeagueGameFinder(league_id_nullable='00',
                                                                   season_nullable=season,
@@ -89,6 +92,11 @@ def get_season_games(season=Season.default):
 
     df_regular_season = gamefinder_regular_season.get_data_frames()[0]
     df_playoffs = gamefinder_playoffs.get_data_frames()[0]
+
+    # Add GAME_TYPES
+    df_regular_season['GAME_TYPE'] = 'regular'
+    df_playoffs['GAME_TYPE'] = 'playoffs'
+
     # combine the two dataframes
     df = pd.concat([df_regular_season, df_playoffs])
     df = df.sort_values(by=['GAME_ID'])
@@ -150,6 +158,18 @@ def add_score_margins(df):
     return df
 
 
+def add_scores(df):
+    # find index of row that contains the first non-null score_margin
+    prev_score = '0-0'
+    for i, row in df.iterrows():
+        # if score margin is null, set it to previous score margin
+        if pd.isnull(row['SCORE']):
+            df.at[i, 'SCORE'] = prev_score
+        else:
+            prev_score = row['SCORE']
+    return df
+
+
 def remove_duplicate_time_rows(df):
     # remove rows with duplicate PCTIMESTRING values
     df = df.drop_duplicates(subset=['SECONDS_ELAPSED'], keep='last')
@@ -194,30 +214,11 @@ def parse_lineups(game_rotations):
     current_players['home'] = []
     current_players['away'] = []
     for i, event in enumerate(player_events_by_time):
-        time = event[0][1] # (time is seconds*10)
-        # Convert time to period remaining time (there are 12 minutes to each period)
-        time_second = round(time / 10)
-        util_period, util_time = get_time_period(time_second)
-        is_overtime = False
-        if time_second > 2880:
-            is_overtime = True
-        time_seconds_for_period = time_second % 720
-        time_seconds_remaining_in_period = 720 - time_seconds_for_period
-        period_time = str(datetime.timedelta(seconds=time_seconds_remaining_in_period))
-        # remove 0s from the start of the string period_time (e.g. 03:00 -> 3:00)
-        # format period time to display m:ss
-        period_time = period_time[2:]
-        if period_time[0] == '0':
-            period_time = period_time[1:]
-        full_game_in_seconds = 12 * 60 * 4
-        if time_second <= full_game_in_seconds:
-            period_number = time_second // 720 + 1
-        else:
-            overtime_period_seconds = time_second - full_game_in_seconds
-            period_number = overtime_period_seconds // 300 + 5
+        _time = event[0][1] # (time is seconds*10)
+        time_second = round(_time / 10)
         last_players = {key: value[:] for key, value in current_players.items()}
         for player_event in event:
-            name, time, event_type, team_name = player_event
+            name, __time, event_type, team_name = player_event
             k = 'home' if team_name == home_team_name else 'away'
             if event_type == 'IN':
                 last_players[k].append(name)
@@ -291,6 +292,8 @@ def calc_lineup_next_diff(current_lineup, next_lineup, pbp, second_mod=0):
         try:
             current_pbp = pbp[pbp['SECONDS_ELAPSED'] == current_seconds_elapsed + offset]
             current_score_margin = int(current_pbp['SCOREMARGIN'].iloc[0])
+            current_score = current_pbp['SCORE'].iloc[0]
+            current_away_score, current_home_score = [int(x) for x in current_score.split('-')]
             break
         except IndexError:
             continue
@@ -302,6 +305,8 @@ def calc_lineup_next_diff(current_lineup, next_lineup, pbp, second_mod=0):
         try:
             next_pbp = pbp[pbp['SECONDS_ELAPSED'] == next_seconds_elapsed + offset]
             next_score_margin = int(next_pbp['SCOREMARGIN'].iloc[0])
+            next_score = next_pbp['SCORE'].iloc[0]
+            next_away_score, next_home_score = [int(x) for x in next_score.split('-')]
             break
         except IndexError:
             continue
@@ -311,14 +316,20 @@ def calc_lineup_next_diff(current_lineup, next_lineup, pbp, second_mod=0):
 
     # get difference between score margins
     score_margin_diff = next_score_margin - current_score_margin
+    home_score_diff = next_home_score - current_home_score
+    away_score_diff = next_away_score - current_away_score
     diff_seconds = next_seconds_elapsed - current_seconds_elapsed
     return {'home': home,
             'away': away,
             'plus_minus': score_margin_diff,
+            'home_plus': home_score_diff,
+            'away_plus': away_score_diff,
+            'starting_score_diff': current_score_margin,
             'subbed_at': current_seconds_elapsed,
             'time_played': diff_seconds}
 
-def get_lineup_point_differential(lineups, pbp):
+
+def get_lineup_point_differential(lineups, pbp, game_type, season, season_ago):
     lineup_diffs = []
 
     for i, current_lineup in enumerate(lineups):
@@ -329,6 +340,9 @@ def get_lineup_point_differential(lineups, pbp):
             break
         try:
             diff = calc_lineup_next_diff(current_lineup, next_lineup, pbp)
+            diff['game_type'] = game_type
+            diff['season'] = season
+            diff['season_ago'] = season_ago
             lineup_diffs.append(diff)
         except NoMatchingSecondsElapsedError:
             print('FAILED')
@@ -336,13 +350,14 @@ def get_lineup_point_differential(lineups, pbp):
     return lineup_diffs
 
 
-def process_game(game_id):
-
+def process_game(game_id, season, season_ago, game_df, reprocess=False):
+    game_type = game_df['GAME_TYPE']
     # Load parsed file it if exists
     path = f'data/raw/lineup_diffs/{game_id}.pkl'
-    if os.path.exists(path):
+    if os.path.exists(path) and not reprocess:
         with open(path, 'rb') as f:
-            return pickle.load(f), False
+            lineup_diffs = pickle.load(f)
+            return lineup_diffs, False
     try:
         pbp = get_game_pbp(game_id)
     except Exception as e:
@@ -350,16 +365,20 @@ def process_game(game_id):
         print(traceback.format_exc())
         return {}, False
     pbp = add_score_margins(pbp)
+    pbp = add_scores(pbp)
     pbp = add_elapsed_time(pbp)
     pbp = remove_duplicate_time_rows(pbp)
     game_rotations = load_game_rotation(game_id)
 
     try:
         player_lineups = parse_lineups(game_rotations)
-        lineup_diffs = get_lineup_point_differential(player_lineups, pbp)
+        lineup_diffs = get_lineup_point_differential(player_lineups, pbp, game_type, season, season_ago)
     except Exception as e:
         print(f'Error processing game {game_id}: {e}')
         print(traceback.format_exc())
+        # remove file if it exists
+        if os.path.exists(path):
+            os.remove(path)
         return {}, False
 
     # Save pickled lineup diffs to file, ensuring directory exists
@@ -367,7 +386,10 @@ def process_game(game_id):
     with open(path, 'wb') as f:
         pickle.dump(lineup_diffs, f)
 
-    return lineup_diffs, True
+    should_sleep = True
+    if reprocess:
+        should_sleep = False
+    return lineup_diffs, should_sleep
 
 def process_last_bulls_game():
     team = get_team('CHI')
@@ -378,35 +400,35 @@ def process_last_bulls_game():
     print('Go Bulls!')
 
 
-def process_season(season):
+def process_season(season, season_ago, reprocess=False):
     print(f'{season}...')
-    games_df = get_season_games(season)
+    games_df = get_season_games(season, reprocess=False)
     # iterate over df rows
     for i, row in games_df.iterrows():
         game_id = row['GAME_ID']
         print(f'{season} - {game_id} - {i}/{len(games_df)}')
-        lineup_diffs, do_sleep = process_game(game_id)
+        lineup_diffs, do_sleep = process_game(game_id, season, season_ago, game_df=row, reprocess=reprocess)
         if do_sleep:
             time_sleep = random.uniform(0.9, 1.5)
             # print(f'Sleeping for {time_sleep} seconds...')
             time.sleep(time_sleep)
 
 
-def process_n_seasons(n=1):
+def process_n_seasons(n=1, reprocess=False):
     start_year = 23
     for i in range(n):
         season = f'20{start_year - (i + 1)}-{start_year - i}'
         print(f'Processing season {season}...')
-        process_season(season)
+        process_season(season, season_ago=i, reprocess=reprocess)
 
-def scrape_season_games():
+def scrape_season_games(reprocess=False):
     n_seasons = 10
     max_retries = 10000000
     retry_delay = 30  # seconds
 
     for retry in range(max_retries):
         try:
-            process_n_seasons(n_seasons)
+            process_n_seasons(n_seasons, reprocess)
             print('Finished')
             break  # exit the loop if successful
         except Exception as e:
@@ -425,7 +447,8 @@ def scrape_season_games():
 def get_player_info(player_id):
     path = f'data/raw/player_info/{player_id}.parquet'
     if os.path.exists(path):
-        return pd.read_parquet(path), False
+        player_info = pd.read_parquet(path)
+        return player_info, False
     player = commonplayerinfo.CommonPlayerInfo(player_id=player_id).get_data_frames()[0]
     os.makedirs(os.path.dirname(path), exist_ok=True)
     player.to_parquet(path)
@@ -459,9 +482,9 @@ def scrape_players():
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    scrape_players()
-    scrape_season_games()
-
+    # scrape_players()
+    scrape_season_games(reprocess=True)
+    # process_last_bulls_game()
 
 
 # Year Old (development)
