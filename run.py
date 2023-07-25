@@ -145,7 +145,8 @@ def main(trial):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Train model
-    wandb.watch(model, log='all', log_freq=100)
+    if config.PARAMS['log_all']:
+        wandb.watch(model, log='all', log_freq=100)
     loss_fn = nn.MSELoss()
     model.to(device)
     if config.PARAMS['log_scores']:

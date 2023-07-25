@@ -26,6 +26,7 @@ PARAMS = {
     'train_specific_season': None,
     'specific_init': None,
     'log_scores': False,
+    'log_all': False,
     # Add any other parameters your model needs
 }
 
