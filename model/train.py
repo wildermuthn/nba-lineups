@@ -1,6 +1,7 @@
+import numpy as np
 import torch
 import wandb
-
+import optuna
 
 def train_loop(dataloader, model, loss_fn, optimizer, epoch):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -19,7 +20,11 @@ def train_loop(dataloader, model, loss_fn, optimizer, epoch):
         optimizer.zero_grad()
         step = epoch * len(dataloader.dataset) + batch * len(x)
         last_step = step
-        avg_loss += loss.item()
+        loss_item = loss.item()
+        avg_loss += loss_item
+        if np.isnan(loss_item):
+            wandb.finish()
+            raise optuna.exceptions.TrialPruned()
         wandb.log({"train_loss": loss.item(),
                    "step": step
                    })
