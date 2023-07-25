@@ -76,7 +76,7 @@ def initialize_model(model_filepath, dataset):
     return model, optimizer, saved_config
 
 
-def objective(trial, group):
+def objective(group, trial):
 
     config.PARAMS['batch_size'] = trial.suggest_categorical('batch_size', [32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536])
     config.PARAMS['lr'] = trial.suggest_float('lr', 1e-5, 1e-2, log=True)
