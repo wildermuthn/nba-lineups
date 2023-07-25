@@ -26,7 +26,8 @@ def train_loop(dataloader, model, loss_fn, optimizer, epoch):
             wandb.finish()
             raise optuna.exceptions.TrialPruned()
         wandb.log({"train_loss": loss.item(),
-                   "step": step
+                   "step": step,
+                   "epoch": epoch,
                    })
     avg_loss /= len(dataloader)
     return last_step, avg_loss
