@@ -76,26 +76,34 @@ def initialize_model(model_filepath, dataset):
     return model, optimizer, saved_config
 
 
-def objective(group, trial):
+def objective(group=None, trial=None):
 
-    config.PARAMS['batch_size'] = trial.suggest_categorical('batch_size', [256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536])
-    config.PARAMS['lr'] = trial.suggest_float('lr', 1e-5, 1e-2, log=True)
-    config.PARAMS['player_embedding_dim'] = trial.suggest_categorical('player_embedding_dim', [16, 32, 64, 128, 256])
-    config.PARAMS['n_head'] = trial.suggest_categorical('n_head', [2, 4, 8, 16, 32])
-    # Check to see if player_embedding_dim is divisible by n_head
-    if config.PARAMS['player_embedding_dim'] % config.PARAMS['n_head'] != 0:
-        raise optuna.exceptions.TrialPruned()
-    config.PARAMS['n_layers'] = trial.suggest_categorical('n_layers', [2, 4, 8, 16, 32])
-    config.PARAMS['optimizer'] = trial.suggest_categorical('optimizer', ['Adam', 'SGD'])
-    config.PARAMS['transformer_dropout'] = trial.suggest_float('transformer_dropout', 0.0, 0.5)
-    config.PARAMS['xavier_init'] = trial.suggest_categorical('xavier_init', [True, False])
+    if group is not None:
+        config.PARAMS['batch_size'] = trial.suggest_categorical('batch_size', [256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536])
+        config.PARAMS['lr'] = trial.suggest_float('lr', 1e-5, 1e-2, log=True)
+        config.PARAMS['player_embedding_dim'] = trial.suggest_categorical('player_embedding_dim', [16, 32, 64, 128, 256])
+        config.PARAMS['n_head'] = trial.suggest_categorical('n_head', [2, 4, 8, 16, 32])
+        # Check to see if player_embedding_dim is divisible by n_head
+        if config.PARAMS['player_embedding_dim'] % config.PARAMS['n_head'] != 0:
+            raise optuna.exceptions.TrialPruned()
+        config.PARAMS['n_layers'] = trial.suggest_categorical('n_layers', [2, 4, 8, 16, 32])
+        config.PARAMS['optimizer'] = trial.suggest_categorical('optimizer', ['Adam', 'SGD'])
+        config.PARAMS['transformer_dropout'] = trial.suggest_float('transformer_dropout', 0.0, 0.5)
+        config.PARAMS['xavier_init'] = trial.suggest_categorical('xavier_init', [True, False])
+        config.PARAMS['xavier_init_toggle'] = 1 if config.PARAMS['xavier_init'] else 0
 
-    wandb.init(
-        project="nba-lineups",
-        config=config.PARAMS,
-        group=group,
-        name=f"{group}_trial_{trial.number}"
-    )
+    if trial is not None:
+        wandb.init(
+            project="nba-lineups",
+            config=config.PARAMS,
+            group=group,
+            name=f"{group}_trial_{trial.number}"
+        )
+    else:
+        wandb.init(
+            project="nba-lineups",
+            config=config.PARAMS
+        )
 
     print("Loading dataset")
     dataset = BasketballDataset(config)
@@ -187,13 +195,14 @@ def objective(group, trial):
 
     epochs = config.PARAMS['n_epochs']
     loss = None
+    test_loss = None
     for epoch in range(epochs):
         print(f"Epoch {epoch+1}\n-------------------------------")
         try:
             last_step, train_loss = train_loop(train_dataloader, model, loss_fn, optimizer, epoch)
             test_loss = test_loop(test_dataloader, model, loss_fn, epoch, step=last_step)
             # if test_loss is nan, skip this trial
-            if np.isnan(test_loss):
+            if np.isnan(test_loss) and trial is not None:
                 wandb.finish()
                 raise optuna.exceptions.TrialPruned()
         except RuntimeError as e:
@@ -203,7 +212,8 @@ def objective(group, trial):
                     torch.cuda.empty_cache()
                 # You can choose to retry with smaller batch size or skip this trial entirely
                 # Here, we choose to skip this trial
-                raise optuna.exceptions.TrialPruned()
+                if trial is not None:
+                    raise optuna.exceptions.TrialPruned()
             else:
                 raise e
         checkpoint_path = f"checkpoints/{wandb.run.name}__{epoch}.pth"
@@ -219,15 +229,15 @@ def objective(group, trial):
                 config,
                 { 'n_players': n_players, 'n_ages': n_ages }
             )
-        trial.report(test_loss, epoch)
-        loss = test_loss
-        if trial.should_prune():
-            wandb.finish()
-            raise optuna.exceptions.TrialPruned()
+        if trial is not None:
+            trial.report(test_loss, epoch)
+            loss = test_loss
+            if trial.should_prune():
+                wandb.finish()
+                raise optuna.exceptions.TrialPruned()
     wandb.finish()
-    return loss
-
     print("Done.")
+    return loss
 
 
 def eval_lineups(filepath):
@@ -414,7 +424,7 @@ def eval_simple(filepath=None):
     print('done')
 
 
-def main():
+def main_optuna():
     # Check for run number in './run.txt', and if the file doesn't exist, create the file and set it to 10
     if os.path.exists('./run.txt'):
         with open('./run.txt', 'r') as f:
@@ -449,6 +459,11 @@ def main():
         print("    {}: {}".format(key, value))
     # eval_simple('checkpoints/swept-dust-292__500.pth')
 
+
+def main_train():
+    objective()
+
+
 if __name__ == "__main__":
-    main()
+    main_train()
 
