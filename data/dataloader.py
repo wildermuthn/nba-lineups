@@ -20,6 +20,7 @@ class BasketballDataset(Dataset):
         self.lineups_skipped = 0
         self.z_score_target = config.PARAMS['z_score_target']
         self.lineup_abs_point_max_threshold_per_60 = config.PARAMS['lineup_abs_point_max_threshold_per_60']
+        self.lineup_abs_point_min_threshold_per_60 = config.PARAMS['lineup_abs_point_min_threshold_per_60']
         self.train_specific_season = config.PARAMS['train_specific_season']
         self.player_index_to_player_info = {}
         directory = config.PARAMS['data_path']
@@ -147,6 +148,11 @@ class BasketballDataset(Dataset):
                     if abs(home_plus_per_minute) > self.lineup_abs_point_max_threshold_per_60:
                         should_skip_sample = True
                     if abs(away_plus_per_minute) > self.lineup_abs_point_max_threshold_per_60:
+                        should_skip_sample = True
+                if self.lineup_abs_point_min_threshold_per_60 is not False:
+                    if abs(home_plus_per_minute) < self.lineup_abs_point_min_threshold_per_60:
+                        should_skip_sample = True
+                    if abs(away_plus_per_minute) < self.lineup_abs_point_min_threshold_per_60:
                         should_skip_sample = True
                 if should_skip_sample:
                     self.lineups_skipped += 1
