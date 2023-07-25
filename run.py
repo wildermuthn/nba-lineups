@@ -78,7 +78,7 @@ def initialize_model(model_filepath, dataset):
 def main(trial):
 
     config.PARAMS['batch_size'] = trial.suggest_categorical('batch_size', [32, 64, 128, 256, 512])
-    config.PARAMS['lr'] = trial.suggest_float('lr', 1e-5, 1e-1, log=True)
+    config.PARAMS['lr'] = trial.suggest_float('lr', 1e-5, 1e-2, log=True)
     config.PARAMS['player_embedding_dim'] = trial.suggest_categorical('player_embedding_dim', [16, 32, 64, 128])
     config.PARAMS['n_head'] = trial.suggest_categorical('n_head', [2, 4, 8, 16])
     config.PARAMS['n_layers'] = trial.suggest_categorical('n_layers', [2, 4, 8, 16])
@@ -86,7 +86,7 @@ def main(trial):
     config.PARAMS['transformer_dropout'] = trial.suggest_float('transformer_dropout', 0.0, 0.5)
     config.PARAMS['xavier_init'] = trial.suggest_categorical('xavier_init', [True, False])
 
-    group = 'optuna_6'
+    group = 'optuna_7'
 
     wandb.init(
         project="nba-lineups",

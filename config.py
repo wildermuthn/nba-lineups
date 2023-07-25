@@ -1,7 +1,7 @@
 PARAMS = {
     # Meta parameters
     'batch_size': 24000,
-    'n_epochs': 5,
+    'n_epochs': 100,
     'epochs_per_checkpoint': 100,
     'data_path': 'data/raw',
 
