@@ -1,15 +1,11 @@
-# Path to the data
-DATA_PATH = 'data/raw'
+PARAMS = {
+    # Meta parameters
+    'batch_size': 24000,
+    'epics_per_checkpoint': 100,
+    'data_path': 'data/raw',
 
-# Batch size for the DataLoader
-BATCH_SIZE = 24000
-
-EPOCHS_PER_CHECKPOINT = 100
-
-# Model parameters
-MODEL_PARAMS = {
+    # Model parameters
     'lr': 0.001,
-    'batch_size': BATCH_SIZE,
     'linear_embedding_dim': 32,
     'player_embedding_dim': 32,
     'model': 'LineupPredictorTransformer',

@@ -26,4 +26,5 @@ def test_loop(dataloader, model, loss_fn, epoch, step):
                "epoch": epoch,
                "step": step
                })
+    return test_loss
 

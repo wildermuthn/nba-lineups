@@ -12,19 +12,19 @@ import numpy as np
 
 class BasketballDataset(Dataset):
     def __init__(self, config):
-        self.min_max_target = config.MODEL_PARAMS['min_max_target']
+        self.min_max_target = config.PARAMS['min_max_target']
         self.data = []
         self.num_generic_players = 0
         self.player_total_seconds = {}
-        self.player_total_seconds_threshold = config.MODEL_PARAMS['player_total_seconds_threshold']
+        self.player_total_seconds_threshold = config.PARAMS['player_total_seconds_threshold']
         self.lineups_skipped = 0
-        self.z_score_target = config.MODEL_PARAMS['z_score_target']
-        self.lineup_abs_point_max_threshold_per_60 = config.MODEL_PARAMS['lineup_abs_point_max_threshold_per_60']
-        self.train_specific_season = config.MODEL_PARAMS['train_specific_season']
+        self.z_score_target = config.PARAMS['z_score_target']
+        self.lineup_abs_point_max_threshold_per_60 = config.PARAMS['lineup_abs_point_max_threshold_per_60']
+        self.train_specific_season = config.PARAMS['train_specific_season']
         self.player_index_to_player_info = {}
-        directory = config.DATA_PATH
-        self.lineup_time_played_threshold = config.MODEL_PARAMS['lineup_time_played_threshold']
-        self.augment_every_n_samples = config.MODEL_PARAMS['augment_every_n_samples']
+        directory = config.PARAMS['data_path']
+        self.lineup_time_played_threshold = config.PARAMS['lineup_time_played_threshold']
+        self.augment_every_n_samples = config.PARAMS['augment_every_n_samples']
         # Get lineup diffs
         lineup_dir = os.path.join(directory, 'lineup_diffs')
         self.lineup_diffs = []

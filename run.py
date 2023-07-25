@@ -8,13 +8,11 @@ from model.model import LineupPredictor, LineupPredictorTransformer, LineupPredi
 import config
 import wandb
 import pickle
-from utils.utils import get_latest_file
 from tqdm import tqdm
-from tqdm.auto import trange
 import os
-from torchvision import transforms
-import itertools
 import numpy as np
+import optuna
+from optuna.trial import TrialState
 
 
 def save_checkpoint(state, filename):
@@ -31,7 +29,7 @@ def load_checkpoint(filename, model, optimizer):
 
 def save_model_configuration(filename, cfg, model_init_params):
     filename = filename[:-4]
-    config_dict = {'MODEL_PARAMS': cfg.MODEL_PARAMS, **model_init_params}
+    config_dict = {'PARAMS': cfg.PARAMS, **model_init_params}
     with open(filename + '.pkl', 'wb') as f:
         pickle.dump(config_dict, f, pickle.HIGHEST_PROTOCOL)
 
@@ -51,23 +49,23 @@ def initialize_model(model_filepath, dataset):
     saved_config = None
     if model_filepath is not None:
         saved_config = load_model_configurations(model_filepath)
-        params = saved_config['MODEL_PARAMS']
+        params = saved_config['PARAMS']
         n_players = saved_config['n_players']
         n_ages = saved_config['n_ages']
     else:
-        params = config.MODEL_PARAMS
+        params = config.PARAMS
         n_players = len(dataset.player_ids)
         n_ages = len(dataset.player_ages_set)
 
     model = None
-    if config.MODEL_PARAMS['model'] == 'LineupPredictorTransformer':
+    if config.PARAMS['model'] == 'LineupPredictorTransformer':
         model = LineupPredictorTransformer(params, n_players, n_ages)
-    if config.MODEL_PARAMS['model'] == 'LineupPredictor':
+    if config.PARAMS['model'] == 'LineupPredictor':
         model = LineupPredictor(params, n_players, n_ages)
-    if config.MODEL_PARAMS['model'] == 'LineupPredictorJustEmbedding':
+    if config.PARAMS['model'] == 'LineupPredictorJustEmbedding':
         model = LineupPredictorJustEmbedding(params, n_players, n_ages)
 
-    if config.MODEL_PARAMS['optimizer'] == 'Adam':
+    if config.PARAMS['optimizer'] == 'Adam':
         optimizer = torch.optim.Adam(model.parameters(), lr=params['lr'])
     else:
         optimizer = torch.optim.SGD(model.parameters(), lr=params['lr'])
@@ -77,9 +75,23 @@ def initialize_model(model_filepath, dataset):
     return model, optimizer, saved_config
 
 
-def main():
-    wandb.init(project="nba-lineups",
-               config=config.MODEL_PARAMS)
+def main(trial):
+
+    config.PARAMS['batch_size'] = trial.suggest_categorical('batch_size', [32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536])
+    config.PARAMS['lr'] = trial.suggest_loguniform('lr', 1e-5, 1e-1)
+    config.PARAMS['player_embedding_dim'] = trial.suggest_categorical('player_embedding_dim', [16, 32, 64, 128])
+    config.PARAMS['n_head'] = trial.suggest_categorical('n_head', [2, 4, 8, 16])
+    config.PARAMS['n_layers'] = trial.suggest_categorical('n_layers', [2, 4, 8, 16])
+    config.PARAMS['optimizer'] = trial.suggest_categorical('optimizer', ['Adam', 'SGD'])
+    config.PARAMS['transformer_dropout'] = trial.suggest_uniform('transformer_dropout', 0.0, 0.5)
+
+    wandb.init(
+        project="nba-lineups",
+        config=config.PARAMS,
+        group='optuna_1',
+        reinit=True,
+        name=f"optuna_1_trial_{trial.number}"
+    )
 
     print("Loading data...")
 
@@ -88,7 +100,7 @@ def main():
     g = torch.Generator()
     g.manual_seed(42)
     train_dataset, eval_dataset = dataset.split(train_fraction=0.9)
-    if config.MODEL_PARAMS['augment_with_generic_players']:
+    if config.PARAMS['augment_with_generic_players']:
         indices = train_dataset.dataset.augment_with_generic_players()
         # add indices to current subset indices, and shuffle
         train_dataset.indices = np.concatenate((train_dataset.indices, indices))
@@ -97,13 +109,13 @@ def main():
 
 
     train_dataloader = DataLoader(train_dataset,
-                                  batch_size=config.BATCH_SIZE,
+                                  batch_size=config.PARAMS['batch_size'],
                                   shuffle=True,
                                   pin_memory=True,
                                   generator=g,
                                   )
     test_dataloader = DataLoader(eval_dataset,
-                                 batch_size=config.BATCH_SIZE,
+                                 batch_size=config.PARAMS['batch_size'],
                                  shuffle=True,
                                  pin_memory=True)
     # print size of datasets
@@ -112,32 +124,20 @@ def main():
     n_players = len(dataset.player_ids)
     n_ages = len(dataset.player_ages_set)
 
-    # # Sample dataloader
-    # train_features, train_labels = next(iter(train_dataloader))
-    # print(f"Feature batch shape: {train_features.size()}")
-    # print(f"Labels batch shape: {train_labels.size()}")
-
     # Initialize model
     print("Initializing model...")
     model = None
-    if config.MODEL_PARAMS['model'] == 'LineupPredictorTransformer':
-        model = LineupPredictorTransformer(config.MODEL_PARAMS, n_players, n_ages)
-    if config.MODEL_PARAMS['model'] == 'LineupPredictor':
-        model = LineupPredictor(config.MODEL_PARAMS, n_players, n_ages)
-    if config.MODEL_PARAMS['model'] == 'LineupPredictorJustEmbedding':
-        model = LineupPredictorJustEmbedding(config.MODEL_PARAMS, n_players, n_ages)
+    if config.PARAMS['model'] == 'LineupPredictorTransformer':
+        model = LineupPredictorTransformer(config.PARAMS, n_players, n_ages)
+    if config.PARAMS['model'] == 'LineupPredictor':
+        model = LineupPredictor(config.PARAMS, n_players, n_ages)
+    if config.PARAMS['model'] == 'LineupPredictorJustEmbedding':
+        model = LineupPredictorJustEmbedding(config.PARAMS, n_players, n_ages)
 
-    if config.MODEL_PARAMS['optimizer'] == 'Adam':
-        optimizer = torch.optim.Adam(model.parameters(), lr=config.MODEL_PARAMS['lr'])
+    if config.PARAMS['optimizer'] == 'Adam':
+        optimizer = torch.optim.Adam(model.parameters(), lr=config.PARAMS['lr'])
     else:
-        optimizer = torch.optim.SGD(model.parameters(), lr=config.MODEL_PARAMS['lr'])
-
-    # Load checkpoint if it exists
-    # checkpoint_path = 'checkpoint.pth'
-    # if os.path.exists(checkpoint_path):
-    #     start_epoch = load_checkpoint(checkpoint_path, model, optimizer)
-    # else:
-    #     start_epoch = 0
+        optimizer = torch.optim.SGD(model.parameters(), lr=config.PARAMS['lr'])
 
     # Check for GPU
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -170,13 +170,14 @@ def main():
         title="Score Distribution (min-max scaled)"
     )})
 
-    epochs = 10000000
+    epochs = 100
+    loss = None
     for epoch in range(epochs):
         print(f"Epoch {epoch+1}\n-------------------------------")
-        last_step = train_loop(train_dataloader, model, loss_fn, optimizer, epoch)
-        test_loop(test_dataloader, model, loss_fn, epoch, step=last_step)
+        last_step, train_loss = train_loop(train_dataloader, model, loss_fn, optimizer, epoch)
+        test_loss = test_loop(test_dataloader, model, loss_fn, epoch, step=last_step)
         checkpoint_path = f"checkpoints/{wandb.run.name}__{epoch}.pth"
-        if epoch % config.EPOCHS_PER_CHECKPOINT == 0:
+        if epoch % config.PARAMS['epics_per_checkpoint'] == 0:
             save_checkpoint({
                 'epoch': epoch,
                 'model_state_dict': model.state_dict(),
@@ -188,10 +189,16 @@ def main():
                 config,
                 { 'n_players': n_players, 'n_ages': n_ages }
             )
+        loss = test_loss
+        trial.report(loss, epoch)
+        if trial.should_prune():
+            raise optuna.exceptions.TrialPruned()
+    return loss
 
     print("Done.")
 
 def eval_lineups(filepath):
+    batch_size = config.PARAMS['batch_size']
     print("Loading data...")
     dataset = BasketballDataset(config)
     g = torch.Generator()
@@ -200,7 +207,7 @@ def eval_lineups(filepath):
 
     dataloader = DataLoader(
         train_dataset,
-        batch_size=config.BATCH_SIZE,
+        batch_size=batch_size,
         shuffle=True,
         pin_memory=True,
         generator=g,
@@ -301,7 +308,7 @@ def eval(filepath=None):
 
     # filter player_info for 'GAMES_PLAYED_CURRENT_SEASON_FLAG' == 'Y'
     player_info = {k: v for k, v in player_info.items() if v['TOTAL_SECONDS'] >
-                   config.MODEL_PARAMS['player_total_seconds_threshold'] and
+                   config.PARAMS['player_total_seconds_threshold'] and
                    v['TO_YEAR'] == 2023
                    }
 
@@ -349,7 +356,7 @@ def eval_simple(filepath=None):
     print("Loading data...")
     player_info = dataset.player_info
     player_info = {k: v for k, v in player_info.items() if v['TOTAL_SECONDS'] >
-                   config.MODEL_PARAMS['player_total_seconds_threshold'] and
+                   config.PARAMS['player_total_seconds_threshold'] and
                    v['TO_YEAR'] == 2023
                    }
     player_preds = {}
@@ -375,5 +382,23 @@ def eval_simple(filepath=None):
 
 
 if __name__ == "__main__":
-    main()
+    study = optuna.create_study(direction="minimize")
+    study.optimize(main, n_trials=100, timeout=600)
+
+    pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
+    complete_trials = study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
+
+    print("Study statistics: ")
+    print("  Number of finished trials: ", len(study.trials))
+    print("  Number of pruned trials: ", len(pruned_trials))
+    print("  Number of complete trials: ", len(complete_trials))
+
+    print("Best trial:")
+    trial = study.best_trial
+
+    print("  Value: ", trial.value)
+
+    print("  Params: ")
+    for key, value in trial.params.items():
+        print("    {}: {}".format(key, value))
     # eval_simple('checkpoints/swept-dust-292__500.pth')

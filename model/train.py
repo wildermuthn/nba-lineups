@@ -6,6 +6,7 @@ def train_loop(dataloader, model, loss_fn, optimizer, epoch):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.train()
     last_step = None
+    avg_loss = 0
     for batch, (x, y) in enumerate(dataloader):
         x = x.to(device)
         y = y.float().to(device)
@@ -18,7 +19,9 @@ def train_loop(dataloader, model, loss_fn, optimizer, epoch):
         optimizer.zero_grad()
         step = epoch * len(dataloader.dataset) + batch * len(x)
         last_step = step
+        avg_loss += loss.item()
         wandb.log({"train_loss": loss.item(),
                    "step": step
                    })
-    return last_step
+    avg_loss /= len(dataloader)
+    return last_step, avg_loss

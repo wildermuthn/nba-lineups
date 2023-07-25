@@ -120,7 +120,7 @@ class LineupPredictorTransformer(nn.Module):
             init.xavier_uniform_(self.away_team_embedding.weight)
             init.xavier_uniform_(self.home_team_embedding.weight)
         elif params['specific_init']:
-            self.init_weights(config.MODEL_PARAMS['specific_init'])
+            self.init_weights(config.PARAMS['specific_init'])
 
     def init_weights(self, init_range) -> None:
         self.player_embedding.weight.data.uniform_(-init_range, init_range)
