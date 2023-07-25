@@ -77,11 +77,11 @@ def initialize_model(model_filepath, dataset):
 
 def main(trial):
 
-    config.PARAMS['batch_size'] = trial.suggest_categorical('batch_size', [32, 64, 128, 256, 512])
+    config.PARAMS['batch_size'] = trial.suggest_categorical('batch_size', [32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536])
     config.PARAMS['lr'] = trial.suggest_float('lr', 1e-5, 1e-2, log=True)
-    config.PARAMS['player_embedding_dim'] = trial.suggest_categorical('player_embedding_dim', [16, 32, 64, 128])
-    config.PARAMS['n_head'] = trial.suggest_categorical('n_head', [2, 4, 8, 16])
-    config.PARAMS['n_layers'] = trial.suggest_categorical('n_layers', [2, 4, 8, 16])
+    config.PARAMS['player_embedding_dim'] = trial.suggest_categorical('player_embedding_dim', [16, 32, 64, 128, 256])
+    config.PARAMS['n_head'] = trial.suggest_categorical('n_head', [2, 4, 8, 16, 32])
+    config.PARAMS['n_layers'] = trial.suggest_categorical('n_layers', [2, 4, 8, 16, 32])
     config.PARAMS['optimizer'] = trial.suggest_categorical('optimizer', ['Adam', 'SGD'])
     config.PARAMS['transformer_dropout'] = trial.suggest_float('transformer_dropout', 0.0, 0.5)
     config.PARAMS['xavier_init'] = trial.suggest_categorical('xavier_init', [True, False])
@@ -129,26 +129,39 @@ def main(trial):
     # Initialize model
     print("Initializing model...")
     model = None
-    if config.PARAMS['model'] == 'LineupPredictorTransformer':
-        model = LineupPredictorTransformer(config.PARAMS, n_players, n_ages)
-    if config.PARAMS['model'] == 'LineupPredictor':
-        model = LineupPredictor(config.PARAMS, n_players, n_ages)
-    if config.PARAMS['model'] == 'LineupPredictorJustEmbedding':
-        model = LineupPredictorJustEmbedding(config.PARAMS, n_players, n_ages)
+    try:
+        if config.PARAMS['model'] == 'LineupPredictorTransformer':
+            model = LineupPredictorTransformer(config.PARAMS, n_players, n_ages)
+        if config.PARAMS['model'] == 'LineupPredictor':
+            model = LineupPredictor(config.PARAMS, n_players, n_ages)
+        if config.PARAMS['model'] == 'LineupPredictorJustEmbedding':
+            model = LineupPredictorJustEmbedding(config.PARAMS, n_players, n_ages)
 
-    if config.PARAMS['optimizer'] == 'Adam':
-        optimizer = torch.optim.Adam(model.parameters(), lr=config.PARAMS['lr'])
-    else:
-        optimizer = torch.optim.SGD(model.parameters(), lr=config.PARAMS['lr'])
+        if config.PARAMS['optimizer'] == 'Adam':
+            optimizer = torch.optim.Adam(model.parameters(), lr=config.PARAMS['lr'])
+        else:
+            optimizer = torch.optim.SGD(model.parameters(), lr=config.PARAMS['lr'])
 
-    # Check for GPU
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # Check for GPU
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    # Train model
-    if config.PARAMS['log_all']:
-        wandb.watch(model, log='all', log_freq=100)
-    loss_fn = nn.MSELoss()
-    model.to(device)
+        # Train model
+        if config.PARAMS['log_all']:
+            wandb.watch(model, log='all', log_freq=100)
+        loss_fn = nn.MSELoss()
+        model.to(device)
+    except RuntimeError as e:
+        if "out of memory" in str(e):
+            print("| WARNING: ran out of memory, retrying with smaller batch size")
+            if hasattr(torch.cuda, 'empty_cache'):
+                torch.cuda.empty_cache()
+            # You can choose to retry with smaller batch size or skip this trial entirely
+            # Here, we choose to skip this trial
+            raise optuna.exceptions.TrialPruned()
+        else:
+            raise e
+
+
     if config.PARAMS['log_scores']:
         scores = dataset.scores
         scores_data = [[s] for s in scores]
@@ -178,8 +191,19 @@ def main(trial):
     loss = None
     for epoch in range(epochs):
         print(f"Epoch {epoch+1}\n-------------------------------")
-        last_step, train_loss = train_loop(train_dataloader, model, loss_fn, optimizer, epoch)
-        test_loss = test_loop(test_dataloader, model, loss_fn, epoch, step=last_step)
+        try:
+            last_step, train_loss = train_loop(train_dataloader, model, loss_fn, optimizer, epoch)
+            test_loss = test_loop(test_dataloader, model, loss_fn, epoch, step=last_step)
+        except RuntimeError as e:
+            if "out of memory" in str(e):
+                print("| WARNING: ran out of memory, retrying with smaller batch size")
+                if hasattr(torch.cuda, 'empty_cache'):
+                    torch.cuda.empty_cache()
+                # You can choose to retry with smaller batch size or skip this trial entirely
+                # Here, we choose to skip this trial
+                raise optuna.exceptions.TrialPruned()
+            else:
+                raise e
         checkpoint_path = f"checkpoints/{wandb.run.name}__{epoch}.pth"
         if epoch % config.PARAMS['epochs_per_checkpoint'] == 0:
             save_checkpoint({
