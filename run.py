@@ -117,8 +117,6 @@ def main(trial):
         train_dataset.indices = np.concatenate((train_dataset.indices, indices))
         np.random.shuffle(train_dataset.indices)
 
-
-
     train_dataloader = DataLoader(train_dataset,
                                   batch_size=config.PARAMS['batch_size'],
                                   shuffle=True,
@@ -203,6 +201,10 @@ def main(trial):
         try:
             last_step, train_loss = train_loop(train_dataloader, model, loss_fn, optimizer, epoch)
             test_loss = test_loop(test_dataloader, model, loss_fn, epoch, step=last_step)
+            # if test_loss is nan, skip this trial
+            if np.isnan(test_loss):
+                wandb.finish()
+                raise optuna.exceptions.TrialPruned()
         except RuntimeError as e:
             if "out of memory" in str(e):
                 print("| WARNING: ran out of memory, retrying with smaller batch size")
