@@ -201,6 +201,9 @@ def objective(group=None, trial=None):
         try:
             last_step, train_loss = train_loop(train_dataloader, model, loss_fn, optimizer, epoch)
             test_loss = test_loop(test_dataloader, model, loss_fn, epoch, step=last_step)
+            sorted_players = eval_standard(model=model, dataset=dataset)
+            # log sorted players to wandb
+            wandb.log({'sorted_players': wandb.Table(data=sorted_players, columns=["player", "plus_minus", "offense", "defense"])})
             # if test_loss is nan, skip this trial
             if np.isnan(test_loss) and trial is not None:
                 wandb.finish()
@@ -331,30 +334,25 @@ def eval_lineups(filepath):
     print("Done.")
 
 
-def eval_standard(filepath=None):
-    dataset = BasketballDataset(config, transform=None)
-    # filepath = 'checkpoints/avid-waterfall-148__4.pth'
-    model, optimizer, saved_config = initialize_model(filepath, dataset)
-    model.eval()
-    # Check for GPU
+def eval_standard(filepath=None, model=None, dataset=None):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.to(device)
+    if dataset is None:
+        dataset = BasketballDataset(config)
+    if model is None:
+        model, optimizer, saved_config = initialize_model(filepath, dataset)
+        model.to(device)
+    model.eval()
     print("Loading data...")
     player_info = dataset.player_info
     generic_players = torch.tensor(
         [[dataset.get_player_tensor_indexes({'IS_GENERIC': True}, 0) for i in range(10)]]
     ).to(device)
-    pred = model(generic_players)
-    pps = pred.item()
-    print(f"Predicted points per game: {pps}")
     player_preds = {}
-
     # filter player_info for 'GAMES_PLAYED_CURRENT_SEASON_FLAG' == 'Y'
     player_info = {k: v for k, v in player_info.items() if v['TOTAL_SECONDS'] >
                    config.PARAMS['player_total_seconds_threshold'] and
                    v['TO_YEAR'] == 2023
                    }
-
     # loop over key values of player_info dict with tqdm
     for player_id, player in tqdm(player_info.items()):
         # replace first element in generic_players with player
@@ -371,21 +369,22 @@ def eval_standard(filepath=None):
         # generic_players[0][8] = player_id_age
         # generic_players[0][9] = player_id_age
         pred = model(generic_players)
-        pps = pred.item()
-        player_preds[player['DISPLAY_FIRST_LAST']] = pps
+        home_pred, away_pred = pred.item()
+        player_preds[player['DISPLAY_FIRST_LAST']] = (home_pred - away_pred, home_pred, away_pred)
 
-    sorted_players = sorted(player_preds.items(), key=lambda x: x[1], reverse=True)
-    # delete player_predictions.txt if it exists
+    sorted_players = sorted(player_preds.items(), key=lambda x: x[1][0], reverse=True)
+    # flatten sorted_players
+    sorted_players = [(player[0], player[1][0], player[1][1], player[1][2]) for player in sorted_players]
+
     if os.path.exists('player_predictions.txt'):
         os.remove('player_predictions.txt')
 
     with open('player_predictions.txt', 'a') as f:
         for i, player in enumerate(sorted_players):
-            print(f"{i+1}. {player[0]}: {player[1]}")
+            print(f"{i+1}. {player[0]}: {player[1]}, {player[2]}, {player[3]}")
             # Write to new line in file
-            f.write(f"{i+1}. {player[0]}: {player[1]}\n")
-
-    print('done')
+            f.write(f"{i+1}. {player[0]}: {player[1]}, {player[2]}, {player[3]}\n")
+    return sorted_players
 
 
 def eval_simple(filepath=None):
