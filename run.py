@@ -389,7 +389,7 @@ def eval_simple(filepath=None):
 
 if __name__ == "__main__":
     study = optuna.create_study(direction="minimize")
-    study.optimize(main, n_trials=100, timeout=600)
+    study.optimize(main, n_trials=100, timeout=60000)
 
     pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
     complete_trials = study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
