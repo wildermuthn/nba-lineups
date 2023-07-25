@@ -86,7 +86,7 @@ def main(trial):
     config.PARAMS['transformer_dropout'] = trial.suggest_float('transformer_dropout', 0.0, 0.5)
     config.PARAMS['xavier_init'] = trial.suggest_categorical('xavier_init', [True, False])
 
-    group = 'optuna_4'
+    group = 'optuna_5'
 
     wandb.init(
         project="nba-lineups",
