@@ -77,7 +77,7 @@ def initialize_model(model_filepath, dataset):
 
 def main(trial):
 
-    config.PARAMS['batch_size'] = trial.suggest_categorical('batch_size', [32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536])
+    config.PARAMS['batch_size'] = trial.suggest_categorical('batch_size', [32, 64, 128, 256, 512])
     config.PARAMS['lr'] = trial.suggest_float('lr', 1e-5, 1e-1, log=True)
     config.PARAMS['player_embedding_dim'] = trial.suggest_categorical('player_embedding_dim', [16, 32, 64, 128])
     config.PARAMS['n_head'] = trial.suggest_categorical('n_head', [2, 4, 8, 16])
@@ -191,8 +191,8 @@ def main(trial):
                 config,
                 { 'n_players': n_players, 'n_ages': n_ages }
             )
+        trial.report(test_loss, epoch)
         loss = test_loss
-        trial.report(loss, epoch)
         if trial.should_prune():
             wandb.finish()
             raise optuna.exceptions.TrialPruned()
