@@ -13,6 +13,7 @@ import os
 import numpy as np
 import optuna
 from optuna.trial import TrialState
+from functools import partial
 
 
 def save_checkpoint(state, filename):
@@ -75,7 +76,7 @@ def initialize_model(model_filepath, dataset):
     return model, optimizer, saved_config
 
 
-def main(trial):
+def objective(trial, group):
 
     config.PARAMS['batch_size'] = trial.suggest_categorical('batch_size', [32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536])
     config.PARAMS['lr'] = trial.suggest_float('lr', 1e-5, 1e-2, log=True)
@@ -86,17 +87,6 @@ def main(trial):
     config.PARAMS['transformer_dropout'] = trial.suggest_float('transformer_dropout', 0.0, 0.5)
     config.PARAMS['xavier_init'] = trial.suggest_categorical('xavier_init', [True, False])
 
-    # Check for run number in './run.txt', and if the file doesn't exist, create the file and set it to 10
-    if os.path.exists('./run.txt'):
-        with open('./run.txt', 'r') as f:
-            run = int(f.read())
-    else:
-        run = 9
-    with open('./run.txt', 'w') as f:
-        f.write(str(run+1))
-
-    group = f"optuna_{run}"
-
     wandb.init(
         project="nba-lineups",
         config=config.PARAMS,
@@ -104,10 +94,8 @@ def main(trial):
         name=f"{group}_trial_{trial.number}"
     )
 
-    print("Loading data...")
-
+    print("Loading dataset")
     dataset = BasketballDataset(config)
-
     g = torch.Generator()
     g.manual_seed(42)
     train_dataset, eval_dataset = dataset.split(train_fraction=0.9)
@@ -238,6 +226,7 @@ def main(trial):
 
     print("Done.")
 
+
 def eval_lineups(filepath):
     batch_size = config.PARAMS['batch_size']
     print("Loading data...")
@@ -329,7 +318,7 @@ def eval_lineups(filepath):
     print("Done.")
 
 
-def eval(filepath=None):
+def eval_standard(filepath=None):
     dataset = BasketballDataset(config, transform=None)
     # filepath = 'checkpoints/avid-waterfall-148__4.pth'
     model, optimizer, saved_config = initialize_model(filepath, dataset)
@@ -422,9 +411,22 @@ def eval_simple(filepath=None):
     print('done')
 
 
-if __name__ == "__main__":
+def main():
+    # Check for run number in './run.txt', and if the file doesn't exist, create the file and set it to 10
+    if os.path.exists('./run.txt'):
+        with open('./run.txt', 'r') as f:
+            run = int(f.read())
+    else:
+        run = 9
+    with open('./run.txt', 'w') as f:
+        f.write(str(run+1))
+
+    group = f"optuna_{run}"
+
     study = optuna.create_study(direction="minimize")
-    study.optimize(main, n_trials=100, timeout=60000)
+    p_objective = partial(objective, group)
+
+    study.optimize(p_objective, n_trials=100, timeout=60000)
 
     pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
     complete_trials = study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
@@ -443,3 +445,7 @@ if __name__ == "__main__":
     for key, value in trial.params.items():
         print("    {}: {}".format(key, value))
     # eval_simple('checkpoints/swept-dust-292__500.pth')
+
+if __name__ == "__main__":
+    main()
+
