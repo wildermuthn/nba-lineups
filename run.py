@@ -84,6 +84,7 @@ def main(trial):
     config.PARAMS['n_layers'] = trial.suggest_categorical('n_layers', [2, 4, 8, 16])
     config.PARAMS['optimizer'] = trial.suggest_categorical('optimizer', ['Adam', 'SGD'])
     config.PARAMS['transformer_dropout'] = trial.suggest_uniform('transformer_dropout', 0.0, 0.5)
+    config.PARAMS['xavier_init'] = trial.suggest_categorical('xavier_init', [True, False])
 
     wandb.init(
         project="nba-lineups",
@@ -170,14 +171,14 @@ def main(trial):
         title="Score Distribution (min-max scaled)"
     )})
 
-    epochs = 100
+    epochs = config.PARAMS['n_epochs']
     loss = None
     for epoch in range(epochs):
         print(f"Epoch {epoch+1}\n-------------------------------")
         last_step, train_loss = train_loop(train_dataloader, model, loss_fn, optimizer, epoch)
         test_loss = test_loop(test_dataloader, model, loss_fn, epoch, step=last_step)
         checkpoint_path = f"checkpoints/{wandb.run.name}__{epoch}.pth"
-        if epoch % config.PARAMS['epics_per_checkpoint'] == 0:
+        if epoch % config.PARAMS['epochs_per_checkpoint'] == 0:
             save_checkpoint({
                 'epoch': epoch,
                 'model_state_dict': model.state_dict(),

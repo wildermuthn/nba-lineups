@@ -1,7 +1,8 @@
 PARAMS = {
     # Meta parameters
     'batch_size': 24000,
-    'epics_per_checkpoint': 100,
+    'n_epochs': 101,
+    'epochs_per_checkpoint': 100,
     'data_path': 'data/raw',
 
     # Model parameters
@@ -20,7 +21,7 @@ PARAMS = {
     'gradient_clipping': False,
     'transformer_dropout': 0.4,
     'xavier_init': True,
-    'augment_with_generic_players': True,
+    'augment_with_generic_players': False,
     'augment_every_n_samples': 100,
     'train_specific_season': None,
     # 'specific_init': 50.0
