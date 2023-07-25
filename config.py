@@ -15,7 +15,7 @@ PARAMS = {
     'model': 'LineupPredictorTransformer',
     'optimizer': 'Adam',
     'lineup_time_played_threshold': 90,
-    'lineup_abs_point_max_threshold_per_60': 600,
+    'lineup_abs_point_max_threshold_per_60': 7,
     'lineup_abs_point_min_threshold_per_60': 0,
     'player_total_seconds_threshold': 25*60*82,
     'min_max_target': True,
