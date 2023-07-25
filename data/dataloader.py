@@ -24,6 +24,7 @@ class BasketballDataset(Dataset):
         self.player_index_to_player_info = {}
         directory = config.DATA_PATH
         self.lineup_time_played_threshold = config.MODEL_PARAMS['lineup_time_played_threshold']
+        self.augment_every_n_samples = config.MODEL_PARAMS['augment_every_n_samples']
         # Get lineup diffs
         lineup_dir = os.path.join(directory, 'lineup_diffs')
         self.lineup_diffs = []
@@ -248,7 +249,7 @@ class BasketballDataset(Dataset):
         print(len(self.data))
         for sample in tqdm(self.data):
             count += 1
-            if (count % 100) == 0:
+            if (count % self.augment_every_n_samples) == 0:
                 # Combine home and away lineups
                 combined_lineup = sample['home'] + sample['away']
                 # Get plus_minus and years_ago
