@@ -18,15 +18,15 @@ MODEL_PARAMS = {
     'optimizer': 'Adam',
     'lineup_time_played_threshold': 90,
     'lineup_abs_point_max_threshold_per_60': 10,
-    'player_total_seconds_threshold': 10*60*82,
+    'player_total_seconds_threshold': 25*60*82,
     'min_max_target': True,
     'z_score_target': False,
     'gradient_clipping': False,
     'transformer_dropout': 0.4,
     'xavier_init': True,
     'augment_with_generic_players': True,
-    'augment_every_n_samples': 10,
-    'train_specific_season': 0,
+    'augment_every_n_samples': 100,
+    'train_specific_season': None,
     # 'specific_init': 50.0
     # Add any other parameters your model needs
 }
