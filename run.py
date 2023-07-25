@@ -148,29 +148,30 @@ def main(trial):
     wandb.watch(model, log='all', log_freq=100)
     loss_fn = nn.MSELoss()
     model.to(device)
-    scores = dataset.scores
-    scores_data = [[s] for s in scores]
-    table = wandb.Table(data=scores_data, columns=["scores"])
-    wandb.log({'plus_minus_per_minute_histogram_raw': wandb.plot.histogram(
-        table, "scores",
-        title="Score Distribution (raw)"
-    )})
+    if config.PARAMS['log_scores']:
+        scores = dataset.scores
+        scores_data = [[s] for s in scores]
+        table = wandb.Table(data=scores_data, columns=["scores"])
+        wandb.log({'plus_minus_per_minute_histogram_raw': wandb.plot.histogram(
+            table, "scores",
+            title="Score Distribution (raw)"
+        )})
 
-    scores = dataset.scores_z_scaled
-    scores_data = [[s] for s in scores]
-    table = wandb.Table(data=scores_data, columns=["scores"])
-    wandb.log({'plus_minus_per_minute_histogram_z_scaled': wandb.plot.histogram(
-        table, "scores",
-        title="Score Distribution (z-scaled)"
-    )})
+        scores = dataset.scores_z_scaled
+        scores_data = [[s] for s in scores]
+        table = wandb.Table(data=scores_data, columns=["scores"])
+        wandb.log({'plus_minus_per_minute_histogram_z_scaled': wandb.plot.histogram(
+            table, "scores",
+            title="Score Distribution (z-scaled)"
+        )})
 
-    scores = dataset.scores_min_max_scaled
-    scores_data = [[s] for s in scores]
-    table = wandb.Table(data=scores_data, columns=["scores"])
-    wandb.log({'plus_minus_per_minute_histogram_min_max': wandb.plot.histogram(
-        table, "scores",
-        title="Score Distribution (min-max scaled)"
-    )})
+        scores = dataset.scores_min_max_scaled
+        scores_data = [[s] for s in scores]
+        table = wandb.Table(data=scores_data, columns=["scores"])
+        wandb.log({'plus_minus_per_minute_histogram_min_max': wandb.plot.histogram(
+            table, "scores",
+            title="Score Distribution (min-max scaled)"
+        )})
 
     epochs = config.PARAMS['n_epochs']
     loss = None

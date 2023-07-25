@@ -24,7 +24,8 @@ PARAMS = {
     'augment_with_generic_players': False,
     'augment_every_n_samples': 100,
     'train_specific_season': None,
-    'specific_init': None
+    'specific_init': None,
+    'log_scores': False,
     # Add any other parameters your model needs
 }
 
