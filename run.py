@@ -91,9 +91,9 @@ def main(trial):
         with open('./run.txt', 'r') as f:
             run = int(f.read())
     else:
-        run = 10
-        with open('./run.txt', 'w') as f:
-            f.write(str(run))
+        run = 9
+    with open('./run.txt', 'w') as f:
+        f.write(str(run+1))
 
     group = f"optuna_{run}"
 
