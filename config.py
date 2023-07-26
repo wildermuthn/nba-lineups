@@ -3,6 +3,7 @@ PARAMS = {
     'batch_size': 4096,
     'n_epochs': 20,
     'epochs_per_checkpoint': 100,
+    'eval_table_per_checkpoint': 20,
     'data_path': 'data/raw',
 
     # Model parameters
