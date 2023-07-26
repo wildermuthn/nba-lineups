@@ -14,8 +14,8 @@ class LineupPredictorJustEmbedding(torch.nn.Module):
         self.batch_size = params['batch_size']
         player_embedding_dim = params['player_embedding_dim']
         total_players = n_players
-        self.player_embedding = nn.Embedding(total_players, player_embedding_dim)
-        self.age_embedding = nn.Embedding(n_ages, player_embedding_dim)
+        self.player_embedding = nn.Embedding(total_players + 5, player_embedding_dim)
+        self.age_embedding = nn.Embedding(n_ages + 5, player_embedding_dim)
         self.home_embedding = torch.nn.Parameter(torch.randn(1, player_embedding_dim))
 
     def get_player_embedding(self, player_id):
