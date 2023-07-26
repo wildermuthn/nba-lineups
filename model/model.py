@@ -221,9 +221,9 @@ class LineupPredictorTransformerV2(nn.Module):
 
     def init_weights(self, init_range) -> None:
         self.player_embedding.weight.data.uniform_(-init_range, init_range)
-        self.age_embedding.weight.data.uniform_(-init_range, init_range)
-        self.away_team_embedding.weight.data.uniform_(-init_range, init_range)
-        self.home_team_embedding.weight.data.uniform_(-init_range, init_range)
+        # self.age_embedding.weight.data.uniform_(-init_range, init_range)
+        # self.away_team_embedding.weight.data.uniform_(-init_range, init_range)
+        # self.home_team_embedding.weight.data.uniform_(-init_range, init_range)
 
     def forward(self, x):
         # apply embedding to player ids and ages

@@ -15,7 +15,7 @@ def train_loop(dataloader, model, loss_fn, optimizer, epoch):
         loss = loss_fn(pred, y)
         loss.backward()
         if model.gradient_clipping:
-            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=.1)
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=.01)
         optimizer.step()
         optimizer.zero_grad()
         step = epoch * len(dataloader.dataset) + batch * len(x)
