@@ -204,6 +204,16 @@ def objective(group=None, trial=None):
             title="Score Distribution (min-max scaled)"
         )})
 
+        if dataset.scores_rest is not None:
+            scores = dataset.scores_rest
+            scores_data = [[s] for s in scores]
+            table = wandb.Table(data=scores_data, columns=["scores"])
+            wandb.log({'plus_minus_per_minute_histogram_raw_rest': wandb.plot.histogram(
+                table, "scores",
+                title="Score Distribution (raw rest)"
+            )})
+
+
     epochs = config.PARAMS['n_epochs']
     loss = None
     test_loss = None

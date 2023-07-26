@@ -220,9 +220,11 @@ class BasketballDataset(Dataset):
         print(f"Number of generic players: {self.num_generic_players}")
         print(f"Number of lineups skipped: {self.lineups_skipped}")
 
+        self.scores_rest = None
         # get random 200,000 items from scores
         if len(all_plus_per_minute) > 200000:
             self.scores = all_plus_per_minute[:200000]
+            self.scores_rest = all_plus_per_minute[200000:]
         else:
             self.scores = all_plus_per_minute
 
