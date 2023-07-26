@@ -202,7 +202,7 @@ def objective(group=None, trial=None):
             last_step, train_loss = train_loop(train_dataloader, model, loss_fn, optimizer, epoch)
             test_loss = test_loop(test_dataloader, model, loss_fn, epoch, step=last_step)
             # log sorted players to wandb
-            if epoch + 1 % 5 == 0:
+            if (epoch + 1) % 5 == 0:
                 sorted_players = eval_standard(model=model, dataset=dataset)
                 wandb_table = wandb.Table(data=sorted_players, columns=["player", "plus_minus", "offense", "defense"])
                 wandb_run.log({"player_rankings": wandb_table, "epoch": epoch})
