@@ -24,7 +24,7 @@ PARAMS = {
     'gradient_clipping': False,
     'augment_with_generic_players': True,
     'augment_every_n_samples': 100,
-    'train_specific_season': 0,
+    'train_specific_season': None,
     'specific_init': None,
     'log_scores': True,
     'log_all': True,
