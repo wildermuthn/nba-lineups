@@ -7,11 +7,11 @@ PARAMS = {
     'data_path': 'data/raw',
 
     # Model parameters
-    'lr': .000343,
+    'lr': .01,
     'player_embedding_dim': 16,
     'n_layers': 2,
     'n_head': 4,
-    'transformer_dropout': 0.1824,
+    'transformer_dropout': 0.0,
     'xavier_init': True,
     'model': 'LineupPredictorTransformerV2',
     'optimizer': 'Adam',
