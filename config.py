@@ -14,7 +14,7 @@ PARAMS = {
     'xavier_init': True,
     'model': 'LineupPredictorTransformer',
     'optimizer': 'Adam',
-    'lineup_time_played_threshold': 1,
+    'lineup_time_played_threshold': 30,
     'lineup_abs_point_max_threshold_per_60': 7,
     'lineup_abs_point_min_threshold_per_60': 0,
     'player_total_seconds_threshold': 250*60,
