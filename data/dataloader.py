@@ -26,6 +26,7 @@ class BasketballDataset(Dataset):
         directory = config.PARAMS['data_path']
         self.lineup_time_played_threshold = config.PARAMS['lineup_time_played_threshold']
         self.augment_every_n_samples = config.PARAMS['augment_every_n_samples']
+        self.max_starting_score_diff = config.PARAMS['max_starting_score_diff']
         # Get lineup diffs
         lineup_dir = os.path.join(directory, 'lineup_diffs')
         self.lineup_diffs = []
@@ -140,6 +141,9 @@ class BasketballDataset(Dataset):
                     if player_total_seconds < self.player_total_seconds_threshold:
                         should_skip_sample = True
                 if time_played < self.lineup_time_played_threshold:
+                    self.lineups_skipped += 1
+                    continue
+                if starting_score_diff > self.max_starting_score_diff:
                     self.lineups_skipped += 1
                     continue
                 home_plus_per_minute = home_plus / time_played * 60

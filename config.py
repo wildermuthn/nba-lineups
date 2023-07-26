@@ -29,6 +29,7 @@ PARAMS = {
     'log_scores': False,
     'log_all': False,
     'linear_embedding_dim': 16,
+    'max_starting_score_diff': 10,
     # Add any other parameters your model needs
 }
 
