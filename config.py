@@ -8,12 +8,12 @@ PARAMS = {
 
     # Model parameters
     'lr': .000343,
-    'player_embedding_dim': 16,
+    'player_embedding_dim': 1,
     'n_layers': 16,
     'n_head': 2,
     'transformer_dropout': 0.1824,
     'xavier_init': True,
-    'model': 'LineupPredictorTransformer',
+    'model': 'LineupPredictorJustEmbedding',
     'optimizer': 'Adam',
     'lineup_time_played_threshold': 30,
     'lineup_abs_point_max_threshold_per_60': 5.5,

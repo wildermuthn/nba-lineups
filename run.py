@@ -65,8 +65,6 @@ def initialize_model(model_filepath, dataset):
         model = LineupPredictor(params, n_players, n_ages)
     if config.PARAMS['model'] == 'LineupPredictorJustEmbedding':
         model = LineupPredictorJustEmbedding(params, n_players, n_ages)
-    if config.PARAMS['model'] == 'LineupPredictorTransformerV2':
-        model = LineupPredictorTransformerV2(params, n_players, n_ages)
 
     if config.PARAMS['optimizer'] == 'Adam':
         optimizer = torch.optim.Adam(model.parameters(), lr=params['lr'])
@@ -81,8 +79,7 @@ def initialize_model(model_filepath, dataset):
 def objective(group=None, trial=None):
     print(config.PARAMS)
     if group is not None:
-        # config.PARAMS['model'] = trial.suggest_categorical('model', ['LineupPredictorTransformerV2', 'LineupPredictorTransformer'])
-        # config.PARAMS['batch_size'] = trial.suggest_categorical('batch_size', [256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536])
+        config.PARAMS['batch_size'] = trial.suggest_categorical('batch_size', [256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536])
         config.PARAMS['lr'] = trial.suggest_float('lr', 1e-5, 1e-2, log=True)
         # config.PARAMS['player_embedding_dim'] = trial.suggest_categorical('player_embedding_dim', [16, 32, 64, 128, 256])
         config.PARAMS['n_head'] = trial.suggest_categorical('n_head', [2, 4, 8, 16, 32])
@@ -156,8 +153,6 @@ def objective(group=None, trial=None):
             model = LineupPredictor(config.PARAMS, n_players, n_ages)
         if config.PARAMS['model'] == 'LineupPredictorJustEmbedding':
             model = LineupPredictorJustEmbedding(config.PARAMS, n_players, n_ages)
-        if config.PARAMS['model'] == 'LineupPredictorTransformerV2':
-            model = LineupPredictorTransformerV2(config.PARAMS, n_players, n_ages)
 
         if config.PARAMS['optimizer'] == 'Adam':
             optimizer = torch.optim.Adam(model.parameters(), lr=config.PARAMS['lr'])
