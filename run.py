@@ -233,7 +233,7 @@ def objective(group=None, trial=None):
             else:
                 raise e
         checkpoint_path = f"checkpoints/{wandb.run.name}__{epoch}.pth"
-        if epoch % config.PARAMS['epochs_per_checkpoint'] == 0:
+        if (epoch+1) % config.PARAMS['epochs_per_checkpoint'] == 0 and epoch != 0:
             sorted_players = eval_standard(model=model, dataset=dataset)
             wandb_table = wandb.Table(data=sorted_players, columns=["player", "plus_minus", "offense", "defense"])
             wandb_run.log({"player_rankings": wandb_table, "epoch": epoch})
