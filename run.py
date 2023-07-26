@@ -203,8 +203,9 @@ def objective(group=None, trial=None):
             test_loss = test_loop(test_dataloader, model, loss_fn, epoch, step=last_step)
             sorted_players = eval_standard(model=model, dataset=dataset)
             # log sorted players to wandb
-            wandb_table = wandb.Table(data=sorted_players, columns=["player", "plus_minus", "offense", "defense"])
-            wandb_run.log({"player_rankings": wandb_table, "epoch": epoch})
+            if epoch + 1 % 5 == 0:
+                wandb_table = wandb.Table(data=sorted_players, columns=["player", "plus_minus", "offense", "defense"])
+                wandb_run.log({"player_rankings": wandb_table, "epoch": epoch})
             # if test_loss is nan, skip this trial
             if np.isnan(test_loss) and trial is not None:
                 wandb.finish()
