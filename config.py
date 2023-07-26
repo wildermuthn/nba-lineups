@@ -12,7 +12,7 @@ PARAMS = {
     'n_layers': 16,
     'n_head': 2,
     'transformer_dropout': 0.1824,
-    'xavier_init': True,
+    'xavier_init': False,
     'model': 'LineupPredictorTransformerV2',
     'optimizer': 'Adam',
     'lineup_time_played_threshold': 30,
