@@ -81,16 +81,19 @@ def objective(group=None, trial=None):
     if group is not None:
         config.PARAMS['batch_size'] = trial.suggest_categorical('batch_size', [256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536])
         config.PARAMS['lr'] = trial.suggest_float('lr', 1e-5, 1e-2, log=True)
-        # config.PARAMS['player_embedding_dim'] = trial.suggest_categorical('player_embedding_dim', [16, 32, 64, 128, 256])
-        config.PARAMS['n_head'] = trial.suggest_categorical('n_head', [2, 4, 8, 16, 32])
-        # Check to see if player_embedding_dim is divisible by n_head
-        if config.PARAMS['player_embedding_dim'] % config.PARAMS['n_head'] != 0:
-            raise optuna.exceptions.TrialPruned()
-        config.PARAMS['n_layers'] = trial.suggest_categorical('n_layers', [2, 4, 8, 16, 32])
         config.PARAMS['optimizer'] = trial.suggest_categorical('optimizer', ['Adam', 'SGD'])
-        config.PARAMS['transformer_dropout'] = trial.suggest_float('transformer_dropout', 0.0, 0.5)
         config.PARAMS['xavier_init'] = trial.suggest_categorical('xavier_init', [True, False])
         config.PARAMS['xavier_init_toggle'] = 1 if config.PARAMS['xavier_init'] else 0
+
+        if config.PARAMS['model'] == 'LineupPredictorTransformer':
+            config.PARAMS['player_embedding_dim'] = trial.suggest_categorical('player_embedding_dim', [16, 32, 64, 128, 256])
+            config.PARAMS['n_head'] = trial.suggest_categorical('n_head', [2, 4, 8, 16, 32])
+            # Check to see if player_embedding_dim is divisible by n_head
+            if config.PARAMS['player_embedding_dim'] % config.PARAMS['n_head'] != 0:
+                raise optuna.exceptions.TrialPruned()
+            config.PARAMS['n_layers'] = trial.suggest_categorical('n_layers', [2, 4, 8, 16, 32])
+            config.PARAMS['transformer_dropout'] = trial.suggest_float('transformer_dropout', 0.0, 0.5)
+
 
 
         # config.PARAMS['min_max_target_toggle'] = 0
