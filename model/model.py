@@ -227,6 +227,7 @@ class LineupPredictorTransformerV2(nn.Module):
 
     def forward(self, x):
         # apply embedding to player ids and ages
+        batch_size = x.shape[0]
         player_ids, player_ages = x.split(1, dim=2)
         player_ids_embedded = self.player_embedding(player_ids)
         player_ages_embedded = self.age_embedding(player_ages)
@@ -269,11 +270,11 @@ class LineupPredictorTransformerV2(nn.Module):
 
         # Sum the home team
         x_home = x[-2, :, :]
-        x_home = x_home.view(x_home.shape[0], -1)
+        x_home = x_home.view(batch_size, -1)
         x_home = self.linear(x_home)
         # Sum the away team
         x_away = x[-1, :, :]
-        x_away = x_away.view(x_away.shape[0], -1)
+        x_away = x_away.view(batch_size, -1)
         x_away = self.linear(x_away)
 
         # concat the two outputs
