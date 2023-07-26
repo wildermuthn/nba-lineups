@@ -24,7 +24,7 @@ class LineupPredictorJustEmbedding(torch.nn.Module):
 
     def forward(self, x):
         (player_ids, player_ages) = x.split(1, dim=2)
-        x = self.player_embedding(player_ids) * self.age_embedding(player_ages)
+        x = self.player_embedding(player_ids) # * self.age_embedding(player_ages)
         home_x = x[:, :5]
         away_x = x[:, 5:]
         sum_home_x = torch.sum(home_x, dim=1) + self.home_embedding
