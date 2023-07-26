@@ -227,6 +227,7 @@ class LineupPredictorTransformerV2(nn.Module):
 
     def forward(self, x):
         # apply embedding to player ids and ages
+        batch_size = x.shape[0]
         player_ids, player_ages = x.split(1, dim=2)
         player_ids_embedded = self.player_embedding(player_ids)
         player_ages_embedded = self.age_embedding(player_ages)
@@ -266,4 +267,5 @@ class LineupPredictorTransformerV2(nn.Module):
         home = self.linear(home)
         away = self.linear(away)
         pred = torch.cat((home, away), dim=0)
+        pred = pred.view(batch_size, -1)
         return pred
