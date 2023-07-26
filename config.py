@@ -25,7 +25,7 @@ PARAMS = {
     'augment_every_n_samples': 100,
     'train_specific_season': None,
     'specific_init': None,
-    'log_scores': True,
+    'log_scores': False,
     'log_all': False,
     'linear_embedding_dim': 16,
     # Add any other parameters your model needs
