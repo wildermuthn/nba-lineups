@@ -266,7 +266,7 @@ class LineupPredictorTransformerV2(nn.Module):
         x = x.permute(1, 0, 2)
 
         # Pass the sequence through the Transformer encoder
-        x = self.transformer_encoder(x)
+        # x = self.transformer_encoder(x)
 
         # Sum the home team
         x_home = x[-2, :, :]
