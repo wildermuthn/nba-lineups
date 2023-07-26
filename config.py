@@ -1,7 +1,7 @@
 PARAMS = {
     # Meta parameters
     'batch_size': 4096,
-    'n_epochs': 10000,
+    'n_epochs': 20,
     'epochs_per_checkpoint': 100,
     'data_path': 'data/raw',
 
@@ -16,7 +16,7 @@ PARAMS = {
     'optimizer': 'Adam',
     'lineup_time_played_threshold': 30,
     'lineup_abs_point_max_threshold_per_60': 7,
-    'lineup_abs_point_min_threshold_per_60': 0,
+    'lineup_abs_point_min_threshold_per_60': .5,
     'player_total_seconds_threshold': 49200,
     'min_max_target': True,
     'z_score_target': False,
@@ -25,8 +25,8 @@ PARAMS = {
     'augment_every_n_samples': 100,
     'train_specific_season': 0,
     'specific_init': None,
-    'log_scores': True,
-    'log_all': True,
+    'log_scores': False,
+    'log_all': False,
     'linear_embedding_dim': 16,
     # Add any other parameters your model needs
 }
