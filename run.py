@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader
 from data.dataloader import BasketballDataset
 from model.train import train_loop
 from model.test import test_loop
-from model.model import LineupPredictor, LineupPredictorTransformer, LineupPredictorJustEmbedding
+from model.model import LineupPredictor, LineupPredictorTransformer, LineupPredictorTransformerV2, LineupPredictorJustEmbedding
 import config
 import wandb
 import pickle
@@ -65,6 +65,8 @@ def initialize_model(model_filepath, dataset):
         model = LineupPredictor(params, n_players, n_ages)
     if config.PARAMS['model'] == 'LineupPredictorJustEmbedding':
         model = LineupPredictorJustEmbedding(params, n_players, n_ages)
+    if config.PARAMS['model'] == 'LineupPredictorTransformerV2':
+        model = LineupPredictorTransformerV2(params, n_players, n_ages)
 
     if config.PARAMS['optimizer'] == 'Adam':
         optimizer = torch.optim.Adam(model.parameters(), lr=params['lr'])
@@ -79,6 +81,7 @@ def initialize_model(model_filepath, dataset):
 def objective(group=None, trial=None):
     print(config)
     if group is not None:
+        config.PARAMS['model'] = trial.suggest_categorical('model', ['LineupPredictorTransformerV2', 'LineupPredictorTransformer'])
         config.PARAMS['batch_size'] = trial.suggest_categorical('batch_size', [256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536])
         config.PARAMS['lr'] = trial.suggest_float('lr', 1e-5, 1e-2, log=True)
         config.PARAMS['player_embedding_dim'] = trial.suggest_categorical('player_embedding_dim', [16, 32, 64, 128, 256])
@@ -153,6 +156,8 @@ def objective(group=None, trial=None):
             model = LineupPredictor(config.PARAMS, n_players, n_ages)
         if config.PARAMS['model'] == 'LineupPredictorJustEmbedding':
             model = LineupPredictorJustEmbedding(config.PARAMS, n_players, n_ages)
+        if config.PARAMS['model'] == 'LineupPredictorTransformerV2':
+            model = LineupPredictorTransformerV2(config.PARAMS, n_players, n_ages)
 
         if config.PARAMS['optimizer'] == 'Adam':
             optimizer = torch.optim.Adam(model.parameters(), lr=config.PARAMS['lr'])
@@ -509,6 +514,6 @@ def main_train():
 
 if __name__ == "__main__":
     wandb.Table.MAX_ARTIFACTS_ROWS = 500000
-    # main_train()
-    main_optuna()
+    main_train()
+    # main_optuna()
 

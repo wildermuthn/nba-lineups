@@ -1,6 +1,6 @@
 PARAMS = {
     # Meta parameters
-    'batch_size': 4096,
+    'batch_size': 512,
     'n_epochs': 20,
     'epochs_per_checkpoint': 100,
     'eval_table_per_checkpoint': 20,
@@ -13,7 +13,7 @@ PARAMS = {
     'n_head': 2,
     'transformer_dropout': 0.1824,
     'xavier_init': True,
-    'model': 'LineupPredictorTransformer',
+    'model': 'LineupPredictorTransformerV2',
     'optimizer': 'Adam',
     'lineup_time_played_threshold': 30,
     'lineup_abs_point_max_threshold_per_60': 5.5,

@@ -89,6 +89,7 @@ class LineupPredictor(torch.nn.Module):
         x = self.linear2(x)
         return x
 
+
 class LineupPredictorTransformer(nn.Module):
     def __init__(self, params, n_players, n_ages):
         super(LineupPredictorTransformer, self).__init__()
@@ -177,6 +178,94 @@ class LineupPredictorTransformer(nn.Module):
         # Sum the away team
         x_away = x[5:, :, :]
         x_away = x_away.view(x_away.shape[1], -1)
+        x_away = self.linear(x_away)
+
+        # concat the two outputs
+        pred = torch.cat((x_home, x_away), dim=1)
+
+        return pred
+
+
+class LineupPredictorTransformerV2(nn.Module):
+    def __init__(self, params, n_players, n_ages):
+        super(LineupPredictorTransformerV2, self).__init__()
+        player_embedding_dim = params['player_embedding_dim']
+        self.gradient_clipping = params['gradient_clipping']
+        self.generic_player_id = torch.tensor(n_players + 1, dtype=torch.int64).to('cuda')
+
+        self.player_embedding = nn.Embedding(n_players+5, player_embedding_dim)
+        self.age_embedding = nn.Embedding(n_ages+5, player_embedding_dim)
+
+        self.away_team_embedding = nn.Embedding(1, player_embedding_dim)
+        self.home_team_embedding = nn.Embedding(1, player_embedding_dim)
+
+        self.transformer_encoder = nn.TransformerEncoder(
+            nn.TransformerEncoderLayer(
+                d_model=player_embedding_dim,
+                nhead=params['n_head'],
+                dropout=params['transformer_dropout']
+            ),
+            num_layers=params['n_layers'],
+        )
+
+        self.linear = torch.nn.Linear(int(player_embedding_dim), 1)
+
+        # initialize weights
+        if params['xavier_init']:
+            init.xavier_uniform_(self.player_embedding.weight)
+            init.xavier_uniform_(self.age_embedding.weight)
+            init.xavier_uniform_(self.away_team_embedding.weight)
+            init.xavier_uniform_(self.home_team_embedding.weight)
+        elif params['specific_init']:
+            self.init_weights(config.PARAMS['specific_init'])
+
+    def init_weights(self, init_range) -> None:
+        self.player_embedding.weight.data.uniform_(-init_range, init_range)
+        self.age_embedding.weight.data.uniform_(-init_range, init_range)
+        self.away_team_embedding.weight.data.uniform_(-init_range, init_range)
+        self.home_team_embedding.weight.data.uniform_(-init_range, init_range)
+
+    def forward(self, x):
+        # apply embedding to player ids and ages
+        player_ids, player_ages = x.split(1, dim=2)
+        player_ids_embedded = self.player_embedding(player_ids)
+        player_ages_embedded = self.age_embedding(player_ages)
+
+        # Add player age embedding to player id embedding
+        x = player_ids_embedded + player_ages_embedded
+
+        # Reshape x to have 3 dimensions
+        x = x.view(x.shape[0], x.shape[1], -1)
+
+        # # Add home team embedding to first five players
+        x[:, :5, :] += self.home_team_embedding.weight
+        # # Add away team embedding to last five players
+        x[:, 5:, :] += self.away_team_embedding.weight
+
+        # Get the first five token (home) and shuffle them
+        home_tokens = x[:, :5, :]
+        home_tokens = home_tokens[:, torch.randperm(home_tokens.size()[1]), :]
+        # Get the last five token (away) and shuffle them
+        away_tokens = x[:, 5:, :]
+        away_tokens = away_tokens[:, torch.randperm(away_tokens.size()[1]), :]
+        # Concatenate the home and away tokens
+        x = torch.cat((home_tokens, away_tokens), dim=1)
+
+        # Reshape x to meet the input requirements of TransformerEncoder
+        x = x.permute(1, 0, 2)
+
+        # Pass the sequence through the Transformer encoder
+        x = self.transformer_encoder(x)
+
+        # Get last two tokens: home_plus, away_plus
+        x_home = x[-2, :, :]
+        x_away = x[-1, :, :]
+
+        # Reshape for linear layer
+        x_home = x_home.view(x_home.shape[0], -1)
+        x_away = x_away.view(x_away.shape[0], -1)
+
+        x_home = self.linear(x_home)
         x_away = self.linear(x_away)
 
         # concat the two outputs
