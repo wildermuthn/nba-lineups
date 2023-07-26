@@ -220,7 +220,7 @@ class LineupPredictorTransformerV2(nn.Module):
             self.init_weights(config.PARAMS['specific_init'])
 
     def init_weights(self, init_range) -> None:
-        self.player_embedding.weight.data.uniform_(1, init_range)
+        self.player_embedding.weight.data.uniform_(0, init_range)
         # self.age_embedding.weight.data.uniform_(-init_range, init_range)
         # self.away_team_embedding.weight.data.uniform_(-init_range, init_range)
         # self.home_team_embedding.weight.data.uniform_(-init_range, init_range)
