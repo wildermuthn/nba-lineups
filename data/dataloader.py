@@ -212,16 +212,6 @@ class BasketballDataset(Dataset):
         all_away_plus_per_minute = [sample['away_plus_per_minute'] for sample in self.data]
         all_plus_per_minute = all_home_plus_per_minute + all_away_plus_per_minute
 
-        self.min_home_plus_per_minute = min(all_home_plus_per_minute)
-        self.max_home_plus_per_minute = max(all_home_plus_per_minute)
-        self.mean_home_score = np.mean(all_home_plus_per_minute)
-        self.std_home_score = np.std(all_home_plus_per_minute)
-
-        self.min_away_plus_per_minute = min(all_away_plus_per_minute)
-        self.max_away_plus_per_minute = max(all_away_plus_per_minute)
-        self.mean_away_score = np.mean(all_away_plus_per_minute)
-        self.std_away_score = np.std(all_away_plus_per_minute)
-
         self.min_plus_per_minute = min(all_plus_per_minute)
         self.max_plus_per_minute = max(all_plus_per_minute)
         self.mean_score = np.mean(all_plus_per_minute)
@@ -330,12 +320,12 @@ class BasketballDataset(Dataset):
         )
         players = torch.cat((home, away))
         if self.min_max_target:
-            home_plus_per_minute = torch.tensor([(sample['home_plus_per_minute'] - self.min_home_plus_per_minute) / (self.max_home_plus_per_minute - self.min_home_plus_per_minute)])
-            away_plus_per_minute = torch.tensor([(sample['away_plus_per_minute'] - self.min_away_plus_per_minute) / (self.max_away_plus_per_minute - self.min_away_plus_per_minute)])
+            home_plus_per_minute = torch.tensor([(sample['home_plus_per_minute'] - self.min_plus_per_minute) / (self.max_plus_per_minute - self.min_plus_per_minute)])
+            away_plus_per_minute = torch.tensor([(sample['away_plus_per_minute'] - self.min_plus_per_minute) / (self.max_plus_per_minute - self.min_plus_per_minute)])
         elif self.z_score_target:
-            home_plus_per_minute = (sample['home_plus_per_minute'] - self.mean_home_score) / self.std_home_score
+            home_plus_per_minute = (sample['home_plus_per_minute'] - self.mean_score) / self.std_score
             home_plus_per_minute = torch.tensor([home_plus_per_minute])
-            away_plus_per_minute = (sample['away_plus_per_minute'] - self.mean_away_score) / self.std_away_score
+            away_plus_per_minute = (sample['away_plus_per_minute'] - self.mean_score) / self.std_score
             away_plus_per_minute = torch.tensor([away_plus_per_minute])
         else:
             home_plus_per_minute = torch.tensor([sample['home_plus_per_minute']])
