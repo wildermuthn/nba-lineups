@@ -220,10 +220,10 @@ class LineupPredictorTransformerV2(nn.Module):
             self.init_weights(config.PARAMS['specific_init'])
 
     def init_weights(self, init_range) -> None:
-        self.player_embedding.weight.data.uniform_(0, init_range)
-        # self.age_embedding.weight.data.uniform_(-init_range, init_range)
-        # self.away_team_embedding.weight.data.uniform_(-init_range, init_range)
-        # self.home_team_embedding.weight.data.uniform_(-init_range, init_range)
+        self.player_embedding.weight.data.uniform_(-init_range, init_range)
+        self.age_embedding.weight.data.uniform_(-init_range, init_range)
+        self.away_team_embedding.weight.data.uniform_(-init_range, init_range)
+        self.home_team_embedding.weight.data.uniform_(-init_range, init_range)
 
     def forward(self, x):
         # apply embedding to player ids and ages
@@ -234,6 +234,16 @@ class LineupPredictorTransformerV2(nn.Module):
         # Add player age embedding to player id embedding
         x = player_ids_embedded * player_ages_embedded
 
+        # Check if any player_id is the generic player_id
+        generic_player_mask = (player_ids == self.generic_player_id)
+        if generic_player_mask.any():
+            # Calculate the average embedding of all players
+            avg_player_embedding = self.player_embedding.weight.mean(dim=0, keepdim=True)
+            avg_age_embedding = self.age_embedding.weight.mean(dim=0, keepdim=True)
+            avg_embedding = avg_player_embedding + avg_age_embedding
+            # Replace the embeddings of generic players with the average embedding
+            x = torch.where(generic_player_mask.unsqueeze(-1), avg_embedding, x)
+
         # Reshape x to have 3 dimensions
         x = x.view(x.shape[0], x.shape[1], -1)
 
@@ -242,20 +252,20 @@ class LineupPredictorTransformerV2(nn.Module):
         # # Add away team embedding to last five players
         x[:, 5:, :] += self.away_team_embedding.weight
 
-        # # Get the first five token (home) and shuffle them
-        # home_tokens = x[:, :5, :]
-        # home_tokens = home_tokens[:, torch.randperm(home_tokens.size()[1]), :]
-        # # Get the last five token (away) and shuffle them
-        # away_tokens = x[:, 5:, :]
-        # away_tokens = away_tokens[:, torch.randperm(away_tokens.size()[1]), :]
-        # # Concatenate the home and away tokens
-        # x = torch.cat((home_tokens, away_tokens), dim=1)
+        # Get the first five token (home) and shuffle them
+        home_tokens = x[:, :5, :]
+        home_tokens = home_tokens[:, torch.randperm(home_tokens.size()[1]), :]
+        # Get the last five token (away) and shuffle them
+        away_tokens = x[:, 5:, :]
+        away_tokens = away_tokens[:, torch.randperm(away_tokens.size()[1]), :]
+        # Concatenate the home and away tokens
+        x = torch.cat((home_tokens, away_tokens), dim=1)
 
         # Reshape x to meet the input requirements of TransformerEncoder
         x = x.permute(1, 0, 2)
 
         # Pass the sequence through the Transformer encoder
-        # x = self.transformer_encoder(x)
+        x = self.transformer_encoder(x)
 
         # Get last two tokens: home_plus, away_plus
         x_home = x[-2, :, :]
