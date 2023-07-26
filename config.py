@@ -18,7 +18,7 @@ PARAMS = {
     'lineup_abs_point_max_threshold_per_60': 7,
     'lineup_abs_point_min_threshold_per_60': 0,
     'player_total_seconds_threshold': 250*60,
-    'min_max_target': True,
+    'min_max_target': False,
     'z_score_target': False,
     'gradient_clipping': False,
     'augment_with_generic_players': False,
@@ -26,7 +26,7 @@ PARAMS = {
     'train_specific_season': 0,
     'specific_init': None,
     'log_scores': True,
-    'log_all': True,
+    'log_all': False,
     'linear_embedding_dim': 16,
     # Add any other parameters your model needs
 }

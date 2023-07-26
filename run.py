@@ -79,9 +79,9 @@ def initialize_model(model_filepath, dataset):
 def objective(group=None, trial=None):
     print(config)
     if group is not None:
-        # config.PARAMS['batch_size'] = trial.suggest_categorical('batch_size', [256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536])
+        config.PARAMS['batch_size'] = trial.suggest_categorical('batch_size', [256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536])
         config.PARAMS['lr'] = trial.suggest_float('lr', 1e-5, 1e-2, log=True)
-        # config.PARAMS['player_embedding_dim'] = trial.suggest_categorical('player_embedding_dim', [16, 32, 64, 128, 256])
+        config.PARAMS['player_embedding_dim'] = trial.suggest_categorical('player_embedding_dim', [16, 32, 64, 128, 256])
         config.PARAMS['n_head'] = trial.suggest_categorical('n_head', [2, 4, 8, 16, 32])
         # Check to see if player_embedding_dim is divisible by n_head
         if config.PARAMS['player_embedding_dim'] % config.PARAMS['n_head'] != 0:
@@ -91,6 +91,16 @@ def objective(group=None, trial=None):
         config.PARAMS['transformer_dropout'] = trial.suggest_float('transformer_dropout', 0.0, 0.5)
         config.PARAMS['xavier_init'] = trial.suggest_categorical('xavier_init', [True, False])
         config.PARAMS['xavier_init_toggle'] = 1 if config.PARAMS['xavier_init'] else 0
+        config.PARAMS['min_max_target_toggle'] = 0
+        config.PARAMS['z_score_target_toggle'] = 0
+
+        target_type = trial.suggest_categorical('target_type', ['min_max', 'z_score', 'raw'])
+        if target_type == 'min_max':
+            config.PARAMS['min_max_target'] = True
+            config.PARAMS['min_max_target_toggle'] = 1
+        if target_type == 'z_score':
+            config.PARAMS['z_score_target'] = True
+            config.PARAMS['z_score_target_toggle'] = 1
 
     if trial is not None:
         wandb_run = wandb.init(
@@ -440,7 +450,7 @@ def main_optuna():
     study = optuna.create_study(direction="minimize")
     p_objective = partial(objective, group)
 
-    study.optimize(p_objective, n_trials=100, timeout=60000)
+    study.optimize(p_objective, n_trials=1000, timeout=6000000)
 
     pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
     complete_trials = study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
