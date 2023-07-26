@@ -17,7 +17,7 @@ PARAMS = {
     'lineup_time_played_threshold': 1,
     'lineup_abs_point_max_threshold_per_60': 7,
     'lineup_abs_point_min_threshold_per_60': 0,
-    'player_total_seconds_threshold': 1,
+    'player_total_seconds_threshold': 250*60,
     'min_max_target': True,
     'z_score_target': False,
     'gradient_clipping': False,
