@@ -271,11 +271,11 @@ class LineupPredictorTransformerV2(nn.Module):
 
         # Sum the home team
         x_home = x[-2, :, :]
-        x_home = x_home.view(batch_size, self.player_embedding_dim, -1)
+        x_home = x_home.view(batch_size, self.player_embedding_dim)
         x_home = self.linear(x_home)
         # Sum the away team
         x_away = x[-1, :, :]
-        x_away = x_away.view(batch_size, self.player_embedding_dim, -1)
+        x_away = x_away.view(batch_size, self.player_embedding_dim)
         x_away = self.linear(x_away)
 
         # concat the two outputs
