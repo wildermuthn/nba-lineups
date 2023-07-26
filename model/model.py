@@ -190,6 +190,7 @@ class LineupPredictorTransformerV2(nn.Module):
     def __init__(self, params, n_players, n_ages):
         super(LineupPredictorTransformerV2, self).__init__()
         player_embedding_dim = params['player_embedding_dim']
+        self.player_embedding_dim = player_embedding_dim
         self.gradient_clipping = params['gradient_clipping']
         self.generic_player_id = torch.tensor(n_players + 1, dtype=torch.int64).to('cuda')
 
@@ -270,11 +271,11 @@ class LineupPredictorTransformerV2(nn.Module):
 
         # Sum the home team
         x_home = x[-2, :, :]
-        x_home = x_home.view(batch_size, -1)
+        x_home = x_home.view(batch_size, self.player_embedding_dim, -1)
         x_home = self.linear(x_home)
         # Sum the away team
         x_away = x[-1, :, :]
-        x_away = x_away.view(batch_size, -1)
+        x_away = x_away.view(batch_size, self.player_embedding_dim, -1)
         x_away = self.linear(x_away)
 
         # concat the two outputs
