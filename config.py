@@ -9,8 +9,8 @@ PARAMS = {
     # Model parameters
     'lr': .000343,
     'player_embedding_dim': 16,
-    'n_layers': 16,
-    'n_head': 2,
+    'n_layers': 2,
+    'n_head': 4,
     'transformer_dropout': 0.1824,
     'xavier_init': True,
     'model': 'LineupPredictorTransformerV2',
