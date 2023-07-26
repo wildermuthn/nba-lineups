@@ -27,6 +27,7 @@ class BasketballDataset(Dataset):
         self.lineup_time_played_threshold = config.PARAMS['lineup_time_played_threshold']
         self.augment_every_n_samples = config.PARAMS['augment_every_n_samples']
         self.max_starting_score_diff = config.PARAMS['max_starting_score_diff']
+        self.game_type = config.PARAMS['game_type']
         # Get lineup diffs
         lineup_dir = os.path.join(directory, 'lineup_diffs')
         self.lineup_diffs = []
@@ -144,6 +145,9 @@ class BasketballDataset(Dataset):
                     self.lineups_skipped += 1
                     continue
                 if starting_score_diff > self.max_starting_score_diff:
+                    self.lineups_skipped += 1
+                    continue
+                if self.game_type is not None and game_type != self.game_type:
                     self.lineups_skipped += 1
                     continue
                 home_plus_per_minute = home_plus / time_played * 60
