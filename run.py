@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader
 from data.dataloader import BasketballDataset
 from model.train import train_loop
 from model.test import test_loop
-from model.model import LineupPredictor, LineupPredictorTransformer, LineupPredictorTransformerV2, LineupPredictorJustEmbedding
+from model.model import LineupPredictor, LineupPredictorTransformer, LineupPredictorJustEmbedding
 import config
 import wandb
 import pickle
