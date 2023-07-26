@@ -233,7 +233,7 @@ class LineupPredictorTransformerV2(nn.Module):
         player_ages_embedded = self.age_embedding(player_ages)
 
         # Add player age embedding to player id embedding
-        x = player_ids_embedded * player_ages_embedded
+        x = player_ids_embedded # * player_ages_embedded
 
         # Check if any player_id is the generic player_id
         generic_player_mask = (player_ids == self.generic_player_id)
