@@ -29,6 +29,9 @@ class LineupPredictorJustEmbedding(torch.nn.Module):
         away_x = x[:, 5:]
         sum_home_x = torch.sum(home_x, dim=1) + self.home_embedding
         sum_away_x = torch.sum(away_x, dim=1)
+        # Resize dimensions
+        sum_home_x = sum_home_x.view(sum_home_x.shape[0], -1)
+        sum_away_x = sum_away_x.view(sum_away_x.shape[0], -1)
         pred = torch.cat((sum_home_x, sum_away_x), dim=1)
         return pred
 
