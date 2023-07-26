@@ -178,7 +178,6 @@ def objective(group=None, trial=None):
         else:
             raise e
 
-
     if config.PARAMS['log_scores']:
         scores = dataset.scores
         scores_data = [[s] for s in scores]
@@ -188,14 +187,14 @@ def objective(group=None, trial=None):
             title="Score Distribution (raw)"
         )})
 
-        if dataset.scores_rest is not None:
-            scores = dataset.scores_rest
-            scores_data = [[s] for s in scores]
-            table = wandb.Table(data=scores_data, columns=["scores"])
-            wandb.log({'plus_minus_per_minute_histogram_raw_rest': wandb.plot.histogram(
-                table, "scores",
-                title="Score Distribution (raw rest)"
-            )})
+        # if dataset.scores_rest is not None:
+        #     scores = dataset.scores_rest
+        #     scores_data = [[s] for s in scores]
+        #     table = wandb.Table(data=scores_data, columns=["scores"])
+        #     wandb.log({'plus_minus_per_minute_histogram_raw_rest': wandb.plot.histogram(
+        #         table, "scores",
+        #         title="Score Distribution (raw rest)"
+        #     )})
 
         scores = dataset.scores_z_scaled
         scores_data = [[s] for s in scores]
@@ -205,14 +204,14 @@ def objective(group=None, trial=None):
             title="Score Distribution (z-scaled)"
         )})
 
-        if dataset.scores_rest_z_scaled is not None:
-            scores = dataset.scores_rest_z_scaled
-            scores_data = [[s] for s in scores]
-            table = wandb.Table(data=scores_data, columns=["scores"])
-            wandb.log({'plus_minus_per_minute_histogram_z_scaled_rest': wandb.plot.histogram(
-                table, "scores",
-                title="Score Distribution (z-scaled rest)"
-            )})
+        # if dataset.scores_rest_z_scaled is not None:
+        #     scores = dataset.scores_rest_z_scaled
+        #     scores_data = [[s] for s in scores]
+        #     table = wandb.Table(data=scores_data, columns=["scores"])
+        #     wandb.log({'plus_minus_per_minute_histogram_z_scaled_rest': wandb.plot.histogram(
+        #         table, "scores",
+        #         title="Score Distribution (z-scaled rest)"
+        #     )})
 
         scores = dataset.scores_min_max_scaled
         scores_data = [[s] for s in scores]
@@ -222,14 +221,14 @@ def objective(group=None, trial=None):
             title="Score Distribution (min-max scaled)"
         )})
 
-        if dataset.scores_rest_min_max_scaled is not None:
-            scores = dataset.scores_rest_min_max_scaled
-            scores_data = [[s] for s in scores]
-            table = wandb.Table(data=scores_data, columns=["scores"])
-            wandb.log({'plus_minus_per_minute_histogram_min_max_rest': wandb.plot.histogram(
-                table, "scores",
-                title="Score Distribution (min-max scaled rest)"
-            )})
+        # if dataset.scores_rest_min_max_scaled is not None:
+        #     scores = dataset.scores_rest_min_max_scaled
+        #     scores_data = [[s] for s in scores]
+        #     table = wandb.Table(data=scores_data, columns=["scores"])
+        #     wandb.log({'plus_minus_per_minute_histogram_min_max_rest': wandb.plot.histogram(
+        #         table, "scores",
+        #         title="Score Distribution (min-max scaled rest)"
+        #     )})
 
 
     epochs = config.PARAMS['n_epochs']

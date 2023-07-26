@@ -220,21 +220,21 @@ class BasketballDataset(Dataset):
         print(f"Number of generic players: {self.num_generic_players}")
         print(f"Number of lineups skipped: {self.lineups_skipped}")
 
-        self.scores_rest = None
-        self.scores_rest_z_scaled = None
-        self.scores_rest_min_max_scaled = None
+        # self.scores_rest = None
+        # self.scores_rest_z_scaled = None
+        # self.scores_rest_min_max_scaled = None
         # get random 200,000 items from scores
         if len(all_plus_per_minute) > 200000:
-            self.scores = all_plus_per_minute[:200000]
-            self.scores_rest = all_plus_per_minute[200000:]
+            self.scores = random.sample(all_plus_per_minute, 200000)
+            # self.scores_rest = all_plus_per_minute[200000:]
         else:
             self.scores = all_plus_per_minute
 
         self.scores_z_scaled = [(score - self.mean_score) / self.std_score for score in self.scores]
         self.scores_min_max_scaled = [(score - self.min_plus_per_minute) / (self.max_plus_per_minute - self.min_plus_per_minute) for score in self.scores]
-        if self.scores_rest is not None:
-            self.scores_rest_z_scaled = [(score - self.mean_score) / self.std_score for score in self.scores_rest]
-            self.scores_rest_min_max_scaled = [(score - self.min_plus_per_minute) / (self.max_plus_per_minute - self.min_plus_per_minute) for score in self.scores_rest]
+        # if self.scores_rest is not None:
+        #     self.scores_rest_z_scaled = [(score - self.mean_score) / self.std_score for score in self.scores_rest]
+        #     self.scores_rest_min_max_scaled = [(score - self.min_plus_per_minute) / (self.max_plus_per_minute - self.min_plus_per_minute) for score in self.scores_rest]
     def augment_with_generic_players(self):
         # For each sample, add additional samples that replace one or more players with a generic player
         new_data = []
