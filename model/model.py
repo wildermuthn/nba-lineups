@@ -24,7 +24,7 @@ class LineupPredictorJustEmbedding(torch.nn.Module):
 
     def forward(self, x):
         (player_ids, player_ages) = x.split(1, dim=2)
-        x = self.player_embedding(player_ids) + self.age_embedding(player_ages)
+        x = self.player_embedding(player_ids) * self.age_embedding(player_ages)
         home_x = x[:, :5]
         away_x = x[:, 5:]
         sum_home_x = torch.sum(home_x, dim=1)
@@ -68,7 +68,7 @@ class LineupPredictor(torch.nn.Module):
         player_ages_embedded = self.age_embedding(player_ages)
 
         # Add player age embedding to player id embedding
-        x = player_ids_embedded + player_ages_embedded
+        x = player_ids_embedded * player_ages_embedded
 
         generic_player_mask = (player_ids == self.generic_player_id)
         if generic_player_mask.any():
@@ -136,7 +136,7 @@ class LineupPredictorTransformer(nn.Module):
         player_ages_embedded = self.age_embedding(player_ages)
 
         # Add player age embedding to player id embedding
-        x = player_ids_embedded + player_ages_embedded
+        x = player_ids_embedded * player_ages_embedded
 
         # Check if any player_id is the generic player_id
         generic_player_mask = (player_ids == self.generic_player_id)
@@ -232,7 +232,7 @@ class LineupPredictorTransformerV2(nn.Module):
         player_ages_embedded = self.age_embedding(player_ages)
 
         # Add player age embedding to player id embedding
-        x = player_ids_embedded + player_ages_embedded
+        x = player_ids_embedded * player_ages_embedded
 
         # Reshape x to have 3 dimensions
         x = x.view(x.shape[0], x.shape[1], -1)
