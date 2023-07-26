@@ -220,7 +220,7 @@ class LineupPredictorTransformerV2(nn.Module):
             self.init_weights(config.PARAMS['specific_init'])
 
     def init_weights(self, init_range) -> None:
-        self.player_embedding.weight.data.uniform_(-init_range, init_range)
+        self.player_embedding.weight.data.uniform_(1, init_range)
         # self.age_embedding.weight.data.uniform_(-init_range, init_range)
         # self.away_team_embedding.weight.data.uniform_(-init_range, init_range)
         # self.home_team_embedding.weight.data.uniform_(-init_range, init_range)
@@ -242,14 +242,14 @@ class LineupPredictorTransformerV2(nn.Module):
         # # Add away team embedding to last five players
         x[:, 5:, :] += self.away_team_embedding.weight
 
-        # Get the first five token (home) and shuffle them
-        home_tokens = x[:, :5, :]
-        home_tokens = home_tokens[:, torch.randperm(home_tokens.size()[1]), :]
-        # Get the last five token (away) and shuffle them
-        away_tokens = x[:, 5:, :]
-        away_tokens = away_tokens[:, torch.randperm(away_tokens.size()[1]), :]
-        # Concatenate the home and away tokens
-        x = torch.cat((home_tokens, away_tokens), dim=1)
+        # # Get the first five token (home) and shuffle them
+        # home_tokens = x[:, :5, :]
+        # home_tokens = home_tokens[:, torch.randperm(home_tokens.size()[1]), :]
+        # # Get the last five token (away) and shuffle them
+        # away_tokens = x[:, 5:, :]
+        # away_tokens = away_tokens[:, torch.randperm(away_tokens.size()[1]), :]
+        # # Concatenate the home and away tokens
+        # x = torch.cat((home_tokens, away_tokens), dim=1)
 
         # Reshape x to meet the input requirements of TransformerEncoder
         x = x.permute(1, 0, 2)
