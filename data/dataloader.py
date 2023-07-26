@@ -145,14 +145,14 @@ class BasketballDataset(Dataset):
                 home_plus_per_minute = home_plus / time_played * 60
                 away_plus_per_minute = away_plus / time_played * 60
                 if self.lineup_abs_point_max_threshold_per_60 is not False:
-                    if abs(home_plus_per_minute) > self.lineup_abs_point_max_threshold_per_60:
+                    if home_plus_per_minute > self.lineup_abs_point_max_threshold_per_60:
                         should_skip_sample = True
-                    if abs(away_plus_per_minute) > self.lineup_abs_point_max_threshold_per_60:
+                    if away_plus_per_minute > self.lineup_abs_point_max_threshold_per_60:
                         should_skip_sample = True
                 if self.lineup_abs_point_min_threshold_per_60 is not False:
-                    if abs(home_plus_per_minute) < self.lineup_abs_point_min_threshold_per_60:
+                    if home_plus_per_minute < self.lineup_abs_point_min_threshold_per_60:
                         should_skip_sample = True
-                    if abs(away_plus_per_minute) < self.lineup_abs_point_min_threshold_per_60:
+                    if away_plus_per_minute < self.lineup_abs_point_min_threshold_per_60:
                         should_skip_sample = True
                 if should_skip_sample:
                     self.lineups_skipped += 1
