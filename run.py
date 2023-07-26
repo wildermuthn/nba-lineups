@@ -79,7 +79,7 @@ def initialize_model(model_filepath, dataset):
 
 
 def objective(group=None, trial=None):
-    print(config)
+    print(config.PARAMS)
     if group is not None:
         # config.PARAMS['model'] = trial.suggest_categorical('model', ['LineupPredictorTransformerV2', 'LineupPredictorTransformer'])
         # config.PARAMS['batch_size'] = trial.suggest_categorical('batch_size', [256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536])
@@ -514,6 +514,6 @@ def main_train():
 
 if __name__ == "__main__":
     wandb.Table.MAX_ARTIFACTS_ROWS = 500000
-    # main_train()
-    main_optuna()
+    main_train()
+    # main_optuna()
 

@@ -1,6 +1,6 @@
 PARAMS = {
     # Meta parameters
-    'batch_size': 512,
+    'batch_size': 4096,
     'n_epochs': 5,
     'epochs_per_checkpoint': 100,
     'eval_table_per_checkpoint': 5,
@@ -26,8 +26,8 @@ PARAMS = {
     'augment_every_n_samples': 100,
     'train_specific_season': None,
     'specific_init': None,
-    'log_scores': False,
-    'log_all': False,
+    'log_scores': True,
+    'log_all': True,
     'linear_embedding_dim': 16,
     # Add any other parameters your model needs
 }
