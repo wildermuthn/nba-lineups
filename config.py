@@ -1,7 +1,7 @@
 PARAMS = {
     # Meta parameters
-    'batch_size': 1024,
-    'n_epochs': 5,
+    'batch_size': 4096,
+    'n_epochs': 10000,
     'epochs_per_checkpoint': 100,
     'data_path': 'data/raw',
 
@@ -17,16 +17,16 @@ PARAMS = {
     'lineup_time_played_threshold': 30,
     'lineup_abs_point_max_threshold_per_60': 7,
     'lineup_abs_point_min_threshold_per_60': 0,
-    'player_total_seconds_threshold': 250*60,
-    'min_max_target': False,
+    'player_total_seconds_threshold': 49200,
+    'min_max_target': True,
     'z_score_target': False,
     'gradient_clipping': False,
     'augment_with_generic_players': False,
-    'augment_every_n_samples': 25,
+    'augment_every_n_samples': 100,
     'train_specific_season': 0,
     'specific_init': None,
     'log_scores': True,
-    'log_all': False,
+    'log_all': True,
     'linear_embedding_dim': 16,
     # Add any other parameters your model needs
 }

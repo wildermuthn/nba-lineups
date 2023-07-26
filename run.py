@@ -212,10 +212,10 @@ def objective(group=None, trial=None):
             last_step, train_loss = train_loop(train_dataloader, model, loss_fn, optimizer, epoch)
             test_loss = test_loop(test_dataloader, model, loss_fn, epoch, step=last_step)
             # log sorted players to wandb
-            if (epoch + 1) % 5 == 0:
-                sorted_players = eval_standard(model=model, dataset=dataset)
-                wandb_table = wandb.Table(data=sorted_players, columns=["player", "plus_minus", "offense", "defense"])
-                wandb_run.log({"player_rankings": wandb_table, "epoch": epoch})
+            # if (epoch + 1) % 5 == 0:
+            #     sorted_players = eval_standard(model=model, dataset=dataset)
+            #     wandb_table = wandb.Table(data=sorted_players, columns=["player", "plus_minus", "offense", "defense"])
+            #     wandb_run.log({"player_rankings": wandb_table, "epoch": epoch})
             # if test_loss is nan, skip this trial
             if np.isnan(test_loss) and trial is not None:
                 wandb.finish()
@@ -233,6 +233,9 @@ def objective(group=None, trial=None):
                 raise e
         checkpoint_path = f"checkpoints/{wandb.run.name}__{epoch}.pth"
         if epoch % config.PARAMS['epochs_per_checkpoint'] == 0:
+            sorted_players = eval_standard(model=model, dataset=dataset)
+            wandb_table = wandb.Table(data=sorted_players, columns=["player", "plus_minus", "offense", "defense"])
+            wandb_run.log({"player_rankings": wandb_table, "epoch": epoch})
             save_checkpoint({
                 'epoch': epoch,
                 'model_state_dict': model.state_dict(),
@@ -477,6 +480,6 @@ def main_train():
 
 if __name__ == "__main__":
     wandb.Table.MAX_ARTIFACTS_ROWS = 500000
-    # main_train()
-    main_optuna()
+    main_train()
+    # main_optuna()
 
