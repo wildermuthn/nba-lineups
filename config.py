@@ -1,13 +1,13 @@
 PARAMS = {
     # Meta parameters
-    'batch_size': 4096,
-    'n_epochs': 5,
+    'batch_size': 2048,
+    'n_epochs': 5000,
     'epochs_per_checkpoint': 100,
     'eval_table_per_checkpoint': 5,
     'data_path': 'data/raw',
 
     # Model parameters
-    'lr': .000343,
+    'lr': 0.007753,
     'player_embedding_dim': 1,
     'n_layers': 16,
     'n_head': 2,
