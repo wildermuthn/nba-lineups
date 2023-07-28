@@ -463,7 +463,7 @@ def main_optuna():
         # add indices to current subset indices, and shuffle
         train_dataset.indices = np.concatenate((train_dataset.indices, indices))
         np.random.shuffle(train_dataset.indices)
-    p_objective = partial(objective, group, dataset, g, train_dataset, eval_dataset
+    p_objective = partial(objective, group, dataset, g, train_dataset, eval_dataset)
 
     study.optimize(p_objective, n_trials=1000, timeout=6000000)
 
