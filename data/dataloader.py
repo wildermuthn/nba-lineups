@@ -154,7 +154,9 @@ class BasketballDataset(Dataset):
                     self.lineups_skipped += 1
                     continue
                 home_plus_per_minute = home_plus / time_played * 60
+                home_plus_per_game = home_plus / time_played * 48 * 60
                 away_plus_per_minute = away_plus / time_played * 60
+                away_plus_per_game = away_plus / time_played * 48 * 60
                 if self.lineup_abs_point_max_threshold_per_60 is not False:
                     if home_plus_per_minute > self.lineup_abs_point_max_threshold_per_60:
                         should_skip_sample = True
@@ -204,7 +206,9 @@ class BasketballDataset(Dataset):
                     'home': home_player_info,
                     'away': away_player_info,
                     'home_plus_per_minute': home_plus_per_minute,
+                    'home_plus_per_game': home_plus_per_game,
                     'away_plus_per_minute': away_plus_per_minute,
+                    'away_plus_per_game': away_plus_per_game,
                     'years_ago': game_info['YEARS_AGO'],
                     'season_ago': season_ago,
                     'game_type': game_type,
@@ -217,13 +221,20 @@ class BasketballDataset(Dataset):
                 continue
 
         all_home_plus_per_minute = [sample['home_plus_per_minute'] for sample in self.data]
+        all_home_plus_per_game = [sample['home_plus_per_game'] for sample in self.data]
         all_away_plus_per_minute = [sample['away_plus_per_minute'] for sample in self.data]
+        all_away_plus_per_game = [sample['away_plus_per_game'] for sample in self.data]
         all_plus_per_minute = all_home_plus_per_minute + all_away_plus_per_minute
+        all_plus_per_game = all_home_plus_per_game + all_away_plus_per_game
 
         self.min_plus_per_minute = min(all_plus_per_minute)
+        self.min_plus_per_game = min(all_plus_per_game)
         self.max_plus_per_minute = max(all_plus_per_minute)
+        self.max_plus_per_game = max(all_plus_per_game)
         self.mean_score = np.mean(all_plus_per_minute)
+        self.mean_score_per_game = np.mean(all_plus_per_game)
         self.std_score = np.std(all_plus_per_minute)
+        self.std_score_per_game = np.std(all_plus_per_game)
 
         print(f"Number of generic players: {self.num_generic_players}")
         print(f"Number of lineups skipped: {self.lineups_skipped}")

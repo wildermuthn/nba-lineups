@@ -391,12 +391,14 @@ def eval_standard(filepath=None, model=None, dataset=None):
     ).to(device)
     player_preds = {}
     # filter player_info for 'GAMES_PLAYED_CURRENT_SEASON_FLAG' == 'Y'
-    player_info = {k: v for k, v in player_info.items() if v['TOTAL_SECONDS'] >
-                   config.PARAMS['player_total_seconds_threshold'] and
-                   v['TO_YEAR'] == 2023
-                   }
+    player_info_filtered = {}
+    for k, v in player_info.items():
+        if v['TOTAL_SECONDS'] > config.PARAMS['player_total_seconds_threshold']  \
+                and v['TO_YEAR'] == 2023:
+            player_info_filtered[k] = v
+
     # loop over key values of player_info dict with tqdm
-    for player_id, player in tqdm(player_info.items()):
+    for player_id, player in tqdm(player_info_filtered.items()):
         # replace first element in generic_players with player
         player_id_age = dataset.get_player_tensor_indexes(player, 0)
         player_id_age = torch.tensor(player_id_age).to(device)
