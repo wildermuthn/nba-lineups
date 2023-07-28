@@ -17,7 +17,7 @@ PARAMS = {
     'optimizer': 'Adam',
     'lineup_time_played_threshold': 10,
     'lineup_abs_point_max_threshold_per_60': 99999,
-    'lineup_abs_point_min_threshold_per_60': 0,
+    'lineup_abs_point_min_threshold_per_60': 0.25,
     'player_total_seconds_threshold': 82*5*60,
     'min_max_target': False,
     'z_score_target': False,
