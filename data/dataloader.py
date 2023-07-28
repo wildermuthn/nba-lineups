@@ -296,8 +296,8 @@ class BasketballDataset(Dataset):
                         'game_type': sample['game_type'],
                         'season_ago': sample['season_ago'],
                     })
-                    generated_lineups = random.sample(generated_lineups, self.augment_n_per_sample)
-                    new_data.extend(generated_lineups)
+                generated_lineups = random.sample(generated_lineups, self.augment_n_per_sample)
+                new_data.extend(generated_lineups)
         new_samples_count += len(new_data)
         self.data.extend(new_data)
         # return indices of the new data
