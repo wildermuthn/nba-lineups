@@ -21,6 +21,7 @@ PARAMS = {
     'player_total_seconds_threshold': 82*5*60,
     'min_max_target': False,
     'z_score_target': False,
+    'log_target': True,
     'gradient_clipping': False,
     'augment_with_generic_players': False,
     'augment_every_n_samples': 100,

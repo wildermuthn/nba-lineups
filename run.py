@@ -82,8 +82,6 @@ def objective(group=None, trial=None):
         config.PARAMS['batch_size'] = trial.suggest_categorical('batch_size', [256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536])
         config.PARAMS['lr'] = trial.suggest_float('lr', 1e-5, 1e-2, log=True)
         config.PARAMS['optimizer'] = trial.suggest_categorical('optimizer', ['Adam', 'SGD'])
-        config.PARAMS['xavier_init'] = trial.suggest_categorical('xavier_init', [True, False])
-        config.PARAMS['xavier_init_toggle'] = 1 if config.PARAMS['xavier_init'] else 0
 
         if config.PARAMS['model'] == 'LineupPredictorTransformer':
             config.PARAMS['player_embedding_dim'] = trial.suggest_categorical('player_embedding_dim', [16, 32, 64, 128, 256])
@@ -93,18 +91,8 @@ def objective(group=None, trial=None):
                 raise optuna.exceptions.TrialPruned()
             config.PARAMS['n_layers'] = trial.suggest_categorical('n_layers', [2, 4, 8, 16, 32])
             config.PARAMS['transformer_dropout'] = trial.suggest_float('transformer_dropout', 0.0, 0.5)
-
-
-
-        # config.PARAMS['min_max_target_toggle'] = 0
-        # config.PARAMS['z_score_target_toggle'] = 0
-        # target_type = trial.suggest_categorical('target_type', ['min_max', 'z_score'])
-        # if target_type == 'min_max':
-        #     config.PARAMS['min_max_target'] = True
-        #     config.PARAMS['min_max_target_toggle'] = 1
-        # if target_type == 'z_score':
-        #     config.PARAMS['z_score_target'] = True
-        #     config.PARAMS['z_score_target_toggle'] = 1
+            config.PARAMS['xavier_init'] = trial.suggest_categorical('xavier_init', [True, False])
+            config.PARAMS['xavier_init_toggle'] = 1 if config.PARAMS['xavier_init'] else 0
 
     if trial is not None:
         wandb_run = wandb.init(
@@ -190,15 +178,6 @@ def objective(group=None, trial=None):
             title="Score Distribution (raw)"
         )})
 
-        # if dataset.scores_rest is not None:
-        #     scores = dataset.scores_rest
-        #     scores_data = [[s] for s in scores]
-        #     table = wandb.Table(data=scores_data, columns=["scores"])
-        #     wandb.log({'plus_minus_per_minute_histogram_raw_rest': wandb.plot.histogram(
-        #         table, "scores",
-        #         title="Score Distribution (raw rest)"
-        #     )})
-
         scores = dataset.scores_z_scaled
         scores_data = [[s] for s in scores]
         table = wandb.Table(data=scores_data, columns=["scores"])
@@ -206,15 +185,6 @@ def objective(group=None, trial=None):
             table, "scores",
             title="Score Distribution (z-scaled)"
         )})
-
-        # if dataset.scores_rest_z_scaled is not None:
-        #     scores = dataset.scores_rest_z_scaled
-        #     scores_data = [[s] for s in scores]
-        #     table = wandb.Table(data=scores_data, columns=["scores"])
-        #     wandb.log({'plus_minus_per_minute_histogram_z_scaled_rest': wandb.plot.histogram(
-        #         table, "scores",
-        #         title="Score Distribution (z-scaled rest)"
-        #     )})
 
         scores = dataset.scores_min_max_scaled
         scores_data = [[s] for s in scores]
@@ -224,15 +194,13 @@ def objective(group=None, trial=None):
             title="Score Distribution (min-max scaled)"
         )})
 
-        # if dataset.scores_rest_min_max_scaled is not None:
-        #     scores = dataset.scores_rest_min_max_scaled
-        #     scores_data = [[s] for s in scores]
-        #     table = wandb.Table(data=scores_data, columns=["scores"])
-        #     wandb.log({'plus_minus_per_minute_histogram_min_max_rest': wandb.plot.histogram(
-        #         table, "scores",
-        #         title="Score Distribution (min-max scaled rest)"
-        #     )})
-
+        scores = dataset.scores_log_scaled
+        scores_data = [[s] for s in scores]
+        table = wandb.Table(data=scores_data, columns=["scores"])
+        wandb.log({'plus_minus_per_minute_histogram_log': wandb.plot.histogram(
+            table, "scores",
+            title="Score Distribution (log scaled)"
+        )})
 
     epochs = config.PARAMS['n_epochs']
     loss = None

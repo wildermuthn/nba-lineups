@@ -19,6 +19,7 @@ class BasketballDataset(Dataset):
         self.player_total_seconds_threshold = config.PARAMS['player_total_seconds_threshold']
         self.lineups_skipped = 0
         self.z_score_target = config.PARAMS['z_score_target']
+        self.log_target = config.PARAMS['log_target']
         self.lineup_abs_point_max_threshold_per_60 = config.PARAMS['lineup_abs_point_max_threshold_per_60']
         self.lineup_abs_point_min_threshold_per_60 = config.PARAMS['lineup_abs_point_min_threshold_per_60']
         self.train_specific_season = config.PARAMS['train_specific_season']
@@ -250,6 +251,7 @@ class BasketballDataset(Dataset):
             self.scores = all_plus_per_minute
 
         self.scores_z_scaled = [(score - self.mean_score) / self.std_score for score in self.scores]
+        self.scores_log_scaled = [np.log(score) for score in self.scores]
         self.scores_min_max_scaled = [(score - self.min_plus_per_minute) / (self.max_plus_per_minute - self.min_plus_per_minute) for score in self.scores]
         # if self.scores_rest is not None:
         #     self.scores_rest_z_scaled = [(score - self.mean_score) / self.std_score for score in self.scores_rest]
@@ -352,6 +354,9 @@ class BasketballDataset(Dataset):
             home_plus_per_minute = torch.tensor([home_plus_per_minute])
             away_plus_per_minute = (sample['away_plus_per_minute'] - self.mean_score) / self.std_score
             away_plus_per_minute = torch.tensor([away_plus_per_minute])
+        elif self.log_target:
+            home_plus_per_minute = torch.tensor([np.log(sample['home_plus_per_minute'])])
+            away_plus_per_minute = torch.tensor([np.log(sample['away_plus_per_minute'])])
         else:
             home_plus_per_minute = torch.tensor([sample['home_plus_per_minute']])
             away_plus_per_minute = torch.tensor([sample['away_plus_per_minute']])
