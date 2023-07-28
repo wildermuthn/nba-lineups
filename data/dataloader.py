@@ -282,11 +282,12 @@ class BasketballDataset(Dataset):
                 years_ago = sample['years_ago']
 
                 # Generate all possible combinations using binary numbers
+                generated_lineups = []
                 for i in range(1, 2 ** num_players - 1):
                     new_lineup = [generic_player if (i & (1 << j)) == 0 else combined_lineup[j] for j in range(num_players)]
                     new_home_lineup = new_lineup[:5]
                     new_away_lineup = new_lineup[5:]
-                    new_data.append({
+                    generated_lineups.append({
                         'home': new_home_lineup,
                         'away': new_away_lineup,
                         'years_ago': years_ago,
@@ -295,7 +296,8 @@ class BasketballDataset(Dataset):
                         'game_type': sample['game_type'],
                         'season_ago': sample['season_ago'],
                     })
-            new_data = random.sample(new_data, self.augment_n_per_sample)
+                    generated_lineups = random.sample(generated_lineups, self.augment_n_per_sample)
+                    new_data.extend(generated_lineups)
         new_samples_count += len(new_data)
         self.data.extend(new_data)
         # return indices of the new data
