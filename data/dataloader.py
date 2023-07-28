@@ -27,6 +27,7 @@ class BasketballDataset(Dataset):
         directory = config.PARAMS['data_path']
         self.lineup_time_played_threshold = config.PARAMS['lineup_time_played_threshold']
         self.augment_every_n_samples = config.PARAMS['augment_every_n_samples']
+        self.augment_n_per_sample = config.PARAMS['augment_n_per_sample']
         self.max_starting_score_diff = config.PARAMS['max_starting_score_diff']
         self.game_type = config.PARAMS['game_type']
         # Get lineup diffs
@@ -294,6 +295,7 @@ class BasketballDataset(Dataset):
                         'game_type': sample['game_type'],
                         'season_ago': sample['season_ago'],
                     })
+            new_data = random.sample(new_data, self.augment_n_per_sample)
         new_samples_count += len(new_data)
         self.data.extend(new_data)
         # return indices of the new data
