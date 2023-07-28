@@ -34,10 +34,13 @@ class BasketballDataset(Dataset):
         for filename in os.listdir(lineup_dir):
             if filename.endswith(".pkl"):
                 with open(os.path.join(lineup_dir, filename), 'rb') as f:
-                    lineup_diffs = pickle.load(f)
-                    for diff in lineup_diffs:
+                    lineup_diffs_load = pickle.load(f)
+                    for diff in lineup_diffs_load:
                         diff['game_id'] = filename[:-4]
                         self.lineup_diffs.append(diff)
+
+        if self.train_specific_season is not None:
+            self.lineup_diffs = [diff for diff in self.lineup_diffs if diff['season_ago'] == self.train_specific_season]
 
         # Load player data based on parquet files
         self.player_info = {}
@@ -212,9 +215,6 @@ class BasketballDataset(Dataset):
                 traceback.print_exc()
                 self.lineups_skipped += 1
                 continue
-
-        if self.train_specific_season is not None:
-            self.data = [sample for sample in self.data if sample['season_ago'] == self.train_specific_season]
 
         all_home_plus_per_minute = [sample['home_plus_per_minute'] for sample in self.data]
         all_away_plus_per_minute = [sample['away_plus_per_minute'] for sample in self.data]
