@@ -79,8 +79,8 @@ def initialize_model(model_filepath, dataset):
 def objective(group=None, dataset=None, g=None, train_dataset=None, eval_dataset=None, trial=None):
     print(config.PARAMS)
     if group is not None:
-        # config.PARAMS['batch_size'] = trial.suggest_categorical('batch_size', [256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536])
-        config.PARAMS['batch_size'] = trial.suggest_categorical('batch_size', [8192, 16384, 32768, 65536])
+        config.PARAMS['batch_size'] = trial.suggest_categorical('batch_size', [256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536])
+        # config.PARAMS['batch_size'] = trial.suggest_categorical('batch_size', [8192, 16384, 32768, 65536])
         config.PARAMS['lr'] = trial.suggest_float('lr', 1e-5, 1e-2, log=True)
         config.PARAMS['optimizer'] = trial.suggest_categorical('optimizer', ['Adam', 'SGD'])
 
