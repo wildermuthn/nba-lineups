@@ -1,9 +1,9 @@
 PARAMS = {
     # Meta parameters
     'batch_size': 2048,
-    'n_epochs': 5000,
+    'n_epochs': 10,
     'epochs_per_checkpoint': 100,
-    'eval_table_per_checkpoint': 5,
+    'eval_table_per_checkpoint': 10,
     'data_path': 'data/raw',
 
     # Model parameters
