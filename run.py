@@ -393,6 +393,8 @@ def eval_standard(filepath=None, model=None, dataset=None):
     # filter player_info for 'GAMES_PLAYED_CURRENT_SEASON_FLAG' == 'Y'
     player_info_filtered = {}
     for k, v in player_info.items():
+        if 'player_total_seconds_threshold' not in config.PARAMS:
+            continue
         if v['TOTAL_SECONDS'] > config.PARAMS['player_total_seconds_threshold']  \
                 and v['TO_YEAR'] == 2023:
             player_info_filtered[k] = v
