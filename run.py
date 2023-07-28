@@ -454,9 +454,6 @@ def main_optuna():
     dataset = BasketballDataset(config)
     g = torch.Generator()
     g.manual_seed(42)
-    dataset = BasketballDataset(config)
-    g = torch.Generator()
-    g.manual_seed(42)
     train_dataset, eval_dataset = dataset.split(train_fraction=0.9)
     if config.PARAMS['augment_with_generic_players']:
         indices = train_dataset.dataset.augment_with_generic_players()
