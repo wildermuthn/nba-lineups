@@ -76,7 +76,7 @@ def initialize_model(model_filepath, dataset):
     return model, optimizer, saved_config
 
 
-def objective(group=None, dataset=None, g=None, trial=None):
+def objective(group=None, dataset=None, g=None, train_dataset=None, eval_dataset=None, trial=None):
     print(config.PARAMS)
     if group is not None:
         config.PARAMS['batch_size'] = trial.suggest_categorical('batch_size', [256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536])
@@ -112,12 +112,12 @@ def objective(group=None, dataset=None, g=None, trial=None):
         dataset = BasketballDataset(config)
         g = torch.Generator()
         g.manual_seed(42)
-    train_dataset, eval_dataset = dataset.split(train_fraction=0.9)
-    if config.PARAMS['augment_with_generic_players']:
-        indices = train_dataset.dataset.augment_with_generic_players()
-        # add indices to current subset indices, and shuffle
-        train_dataset.indices = np.concatenate((train_dataset.indices, indices))
-        np.random.shuffle(train_dataset.indices)
+        train_dataset, eval_dataset = dataset.split(train_fraction=0.9)
+        if config.PARAMS['augment_with_generic_players']:
+            indices = train_dataset.dataset.augment_with_generic_players()
+            # add indices to current subset indices, and shuffle
+            train_dataset.indices = np.concatenate((train_dataset.indices, indices))
+            np.random.shuffle(train_dataset.indices)
 
     train_dataloader = DataLoader(train_dataset,
                                   batch_size=config.PARAMS['batch_size'],
@@ -454,7 +454,16 @@ def main_optuna():
     dataset = BasketballDataset(config)
     g = torch.Generator()
     g.manual_seed(42)
-    p_objective = partial(objective, group, dataset, g)
+    dataset = BasketballDataset(config)
+    g = torch.Generator()
+    g.manual_seed(42)
+    train_dataset, eval_dataset = dataset.split(train_fraction=0.9)
+    if config.PARAMS['augment_with_generic_players']:
+        indices = train_dataset.dataset.augment_with_generic_players()
+        # add indices to current subset indices, and shuffle
+        train_dataset.indices = np.concatenate((train_dataset.indices, indices))
+        np.random.shuffle(train_dataset.indices)
+    p_objective = partial(objective, group, dataset, g, train_dataset, eval_dataset
 
     study.optimize(p_objective, n_trials=1000, timeout=6000000)
 
