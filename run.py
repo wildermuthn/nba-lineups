@@ -76,7 +76,7 @@ def initialize_model(model_filepath, dataset):
     return model, optimizer, saved_config
 
 
-def objective(group=None, trial=None):
+def objective(group=None, dataset=None, g=None, trial=None):
     print(config.PARAMS)
     if group is not None:
         config.PARAMS['batch_size'] = trial.suggest_categorical('batch_size', [256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536])
@@ -108,9 +108,10 @@ def objective(group=None, trial=None):
         )
 
     print("Loading dataset")
-    dataset = BasketballDataset(config)
-    g = torch.Generator()
-    g.manual_seed(42)
+    if dataset is None and g is None:
+        dataset = BasketballDataset(config)
+        g = torch.Generator()
+        g.manual_seed(42)
     train_dataset, eval_dataset = dataset.split(train_fraction=0.9)
     if config.PARAMS['augment_with_generic_players']:
         indices = train_dataset.dataset.augment_with_generic_players()
@@ -450,7 +451,10 @@ def main_optuna():
     group = f"optuna_{run}"
 
     study = optuna.create_study(direction="minimize")
-    p_objective = partial(objective, group)
+    dataset = BasketballDataset(config)
+    g = torch.Generator()
+    g.manual_seed(42)
+    p_objective = partial(objective, group, dataset, g)
 
     study.optimize(p_objective, n_trials=1000, timeout=6000000)
 
