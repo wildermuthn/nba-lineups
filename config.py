@@ -15,7 +15,7 @@ PARAMS = {
     'xavier_init': True,
     'model': 'LineupPredictorJustEmbedding',
     'optimizer': 'Adam',
-    'lineup_time_played_threshold': 90,
+    'lineup_time_played_threshold': 60,
     'lineup_abs_point_max_threshold_per_60': 14,
     'lineup_abs_point_min_threshold_per_60': 0.25,
     'player_total_seconds_threshold': 82*15*60,
