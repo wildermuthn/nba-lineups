@@ -23,7 +23,7 @@ PARAMS = {
     'z_score_target': False,
     'log_target': False,
     'gradient_clipping': False,
-    'augment_with_generic_players': True,
+    'augment_with_generic_players': False,
     'augment_n_per_sample': 15,
     'augment_every_n_samples': 1,
     'train_specific_season': 0,
