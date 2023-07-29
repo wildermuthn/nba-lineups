@@ -79,13 +79,13 @@ def initialize_model(model_filepath, dataset):
 def objective(group=None, dataset=None, g=None, train_dataset=None, eval_dataset=None, trial=None):
     print(config.PARAMS)
     if group is not None:
-        # config.PARAMS['batch_size'] = trial.suggest_categorical('batch_size', [256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536])
-        config.PARAMS['batch_size'] = trial.suggest_categorical('batch_size', [32768, 65536])
-        config.PARAMS['lr'] = trial.suggest_float('lr', 1e-5, 1e-2, log=True)
+        # config.PARAMS['batch_size'] = trial.suggest_categorical('batch_size', [64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536])
+        config.PARAMS['batch_size'] = trial.suggest_categorical('batch_size', [8192, 16384, 32768, 65536])
+        config.PARAMS['lr'] = trial.suggest_float('lr', 1e-6, 1e-2, log=True)
         config.PARAMS['optimizer'] = trial.suggest_categorical('optimizer', ['Adam', 'SGD'])
 
         if config.PARAMS['model'] == 'LineupPredictorTransformer':
-            config.PARAMS['player_embedding_dim'] = trial.suggest_categorical('player_embedding_dim', [16, 32, 64, 128, 256])
+            config.PARAMS['player_embedding_dim'] = trial.suggest_categorical('player_embedding_dim', [16, 32, 64, 128, 256, 512, 1024])
             config.PARAMS['n_head'] = trial.suggest_categorical('n_head', [2, 4, 8, 16, 32])
             # Check to see if player_embedding_dim is divisible by n_head
             if config.PARAMS['player_embedding_dim'] % config.PARAMS['n_head'] != 0:

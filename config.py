@@ -1,9 +1,9 @@
 PARAMS = {
     # Meta parameters
     'batch_size': 32768,
-    'n_epochs': 250000,
+    'n_epochs': 100,
     'epochs_per_checkpoint': 100,
-    'eval_table_per_checkpoint': 10,
+    'eval_table_per_checkpoint': 100,
     'data_path': 'data/raw',
 
     # Model parameters
@@ -13,7 +13,7 @@ PARAMS = {
     'n_head': 2,
     'transformer_dropout': 0.1824,
     'xavier_init': True,
-    'model': 'LineupPredictorJustEmbedding',
+    'model': 'LineupPredictorTransformer',
     'optimizer': 'Adam',
     'lineup_time_played_threshold': 60,
     'lineup_abs_point_max_threshold_per_60': 14,
@@ -24,14 +24,14 @@ PARAMS = {
     'log_target': False,
     'gradient_clipping': False,
     'augment_with_generic_players': True,
-    'augment_n_per_sample': 5,
+    'augment_n_per_sample': 15,
     'augment_every_n_samples': 1,
     'train_specific_season': 0,
     'specific_init': None,
     'log_scores': True,
-    'log_all': True,
+    'log_all': False,
     'linear_embedding_dim': 16,
-    'max_starting_score_diff': 60,
+    'max_starting_score_diff': 24,
     'game_type': 'regular',
     # Add any other parameters your model needs
 }
